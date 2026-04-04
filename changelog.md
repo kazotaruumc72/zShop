@@ -4,6 +4,11 @@
 
 # Unreleased
 
+# 3.3.4
+
+- Fix economy loading error
+- Fix item cache display
+
 # 3.3.3
 
 - **Fixed**: zMenu version
