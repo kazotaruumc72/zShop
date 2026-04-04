@@ -1,21 +1,18 @@
 package fr.maxlego08.shop.economy;
 
-import fr.maxlego08.menu.hooks.currencies.Currencies;
-import fr.maxlego08.menu.hooks.currencies.CurrencyProvider;
 import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.api.economy.EconomyManager;
 import fr.maxlego08.shop.api.economy.ShopEconomy;
 import fr.maxlego08.shop.api.event.events.ZShopEconomyRegisterEvent;
 import fr.maxlego08.shop.save.Config;
 import fr.maxlego08.shop.zcore.logger.Logger;
+import fr.traqueur.currencies.Currencies;
+import fr.traqueur.currencies.CurrencyProvider;
+import fr.traqueur.currencies.providers.ZMenuItemProvider;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ZEconomyManager implements EconomyManager {
 
@@ -63,27 +60,37 @@ public class ZEconomyManager implements EconomyManager {
 
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(file);
         for (String key : configuration.getConfigurationSection("economies.").getKeys(false)) {
-            String path = "economies." + key + ".";
+            try {
 
-            if (!configuration.getBoolean(path + "isEnable", configuration.getBoolean(path + "is-enable"))) continue;
+                String path = "economies." + key + ".";
 
-            String name = configuration.getString(path + "name", "VAULT");
-            String type = configuration.getString(path + "type", "VAULT");
-            String currency = configuration.getString(path + "currency", "$");
-            String denyMessage = configuration.getString(path + "denyMessage", configuration.getString(path + "deny-message"));
+                if (!configuration.getBoolean(path + "isEnable", configuration.getBoolean(path + "is-enable")))
+                    continue;
 
-            Currencies currencies = Currencies.valueOf(type.toUpperCase());
-            CurrencyProvider currencyProvider = switch (currencies) {
-                case ZMENUITEMS, ITEM -> Currencies.ZMENUITEMS.createProvider(plugin, file, path + "item.");
-                case ZESSENTIALS, ECOBITS, COINSENGINE, REDISECONOMY -> {
-                    String currencyName = configuration.getString(path + "currencyName", configuration.getString(path + "currency-name"));
-                    yield currencies.createProvider(currencyName);
-                }
-                default -> currencies.createProvider();
-            };
+                String name = configuration.getString(path + "name", "VAULT");
+                String type = configuration.getString(path + "type", "VAULT");
+                String currency = configuration.getString(path + "currency", "$");
+                String denyMessage = configuration.getString(path + "denyMessage", configuration.getString(path + "deny-message"));
 
-            if (Config.enableDebug) Logger.info("Register Vault economy");
-            registerEconomy(new ZShopEconomy(name, currency, denyMessage, currencyProvider));
+                Currencies currencies = Currencies.valueOf(type.toUpperCase());
+                CurrencyProvider currencyProvider = switch (currencies) {
+                    case ZMENUITEMS, ITEM -> {
+                        var itemStack = this.plugin.getIManager().loadItemStack(configuration, path + "item.", file);
+                        yield new ZMenuItemProvider(plugin, itemStack);
+                    }
+                    case ZESSENTIALS, ECOBITS, COINSENGINE, REDISECONOMY -> {
+                        String currencyName = configuration.getString(path + "currencyName", configuration.getString(path + "currency-name"));
+                        yield currencies.createProvider(currencyName);
+                    }
+                    default -> currencies.createProvider();
+                };
+
+                if (Config.enableDebug) Logger.info("Register " + name + " economy");
+                registerEconomy(new ZShopEconomy(name, currency, denyMessage, currencyProvider));
+            } catch (Exception exception) {
+                this.plugin.getLogger().severe("Error while loading " + key + " economy");
+                exception.printStackTrace();
+            }
         }
 
         ZShopEconomyRegisterEvent event = new ZShopEconomyRegisterEvent(this);

@@ -52,3 +52,4 @@ target-api
 .claude
 CLAUDE.md
 gradle.properties
+build-and-deploy.sh

@@ -59,8 +59,8 @@ allprojects {
     dependencies {
         compileOnly("org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT")
         compileOnly("me.clip:placeholderapi:2.11.6")
-        compileOnly("fr.maxlego08.menu:zmenu-api:1.1.1.0")
-
+        compileOnly("fr.maxlego08.menu:zmenu-api:1.1.1.2")
+        implementation("fr.traqueur.currencies:currenciesapi:1.0.13")
     }
 }
 
@@ -76,6 +76,8 @@ dependencies {
 
 tasks {
     shadowJar {
+
+        relocate("fr.traqueur.currencies", "fr.maxlego08.zshop.libs.currencies")
 
         rootProject.extra.properties["sha"]?.let { sha ->
             archiveClassifier.set("${rootProject.extra.properties["classifier"]}-${sha}")

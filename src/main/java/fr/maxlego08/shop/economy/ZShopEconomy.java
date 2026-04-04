@@ -1,8 +1,8 @@
 package fr.maxlego08.shop.economy;
 
-import fr.maxlego08.menu.hooks.currencies.CurrencyProvider;
 import fr.maxlego08.shop.api.economy.ShopEconomy;
 import fr.maxlego08.shop.zcore.utils.ZUtils;
+import fr.traqueur.currencies.CurrencyProvider;
 import org.bukkit.OfflinePlayer;
 
 import java.math.BigDecimal;
@@ -42,17 +42,17 @@ public class ZShopEconomy extends ZUtils implements ShopEconomy {
 
     @Override
     public double getMoney(OfflinePlayer offlinePlayer) {
-        return this.currencyProvider.getBalance(offlinePlayer).doubleValue();
+        return this.currencyProvider.getBalance(offlinePlayer.getUniqueId()).doubleValue();
     }
 
     @Override
     public void depositMoney(OfflinePlayer offlinePlayer, double value, String reason) {
-        this.currencyProvider.deposit(offlinePlayer, BigDecimal.valueOf(value), reason);
+        this.currencyProvider.deposit(offlinePlayer.getUniqueId(), BigDecimal.valueOf(value), reason);
     }
 
     @Override
     public void withdrawMoney(OfflinePlayer offlinePlayer, double value, String reason) {
-        this.currencyProvider.withdraw(offlinePlayer, BigDecimal.valueOf(value), reason);
+        this.currencyProvider.withdraw(offlinePlayer.getUniqueId(), BigDecimal.valueOf(value), reason);
     }
 
     public CurrencyProvider getCurrencyProvider() {
