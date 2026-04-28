@@ -25,8 +25,11 @@ public class InventoryUtils {
             if (isSimilarItem(offhandItem, itemToRemove)) {
                 int offhandAmount = offhandItem.getAmount();
 
-                if (offhandAmount >= amount) {
+                if (offhandAmount > amount) {
                     offhandItem.setAmount(offhandAmount - amount);
+                    return;
+                } else if (offhandAmount == amount) {
+                    playerInventory.setItemInOffHand(null);
                     return;
                 } else {
                     playerInventory.setItemInOffHand(null);
@@ -42,8 +45,11 @@ public class InventoryUtils {
             if (isSimilarItem(currentItem, itemToRemove)) {
                 int currentAmount = currentItem.getAmount();
 
-                if (currentAmount >= amount) {
+                if (currentAmount > amount) {
                     currentItem.setAmount(currentAmount - amount);
+                    return;
+                } else if (currentAmount == amount) {
+                    inventory.setItem(i, null);
                     return;
                 } else {
                     inventory.setItem(i, null);
