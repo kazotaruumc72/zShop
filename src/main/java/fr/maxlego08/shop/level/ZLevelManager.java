@@ -98,6 +98,10 @@ public class ZLevelManager extends ZUtils implements Saveable {
         PlayerLevel playerLevel = getOrCreate(player.getUniqueId());
 
         int expPerItem = this.levelConfig.getExp(materialOrId);
+        // Every traded item counts toward progression (level requirements are
+        // expressed as a raw item count). Experience is only granted when the
+        // material is registered in exp.yml; unlisted items give 0 XP but
+        // still increase the player's progression.
         playerLevel.addItems(amount);
         if (expPerItem > 0) {
             playerLevel.addExp((long) expPerItem * amount);
@@ -215,9 +219,11 @@ public class ZLevelManager extends ZUtils implements Saveable {
     }
 
     /**
-     * Register PlaceholderAPI integration for the level system. The plugin
-     * exposes them under the {@code zshop_} prefix; see the README/PR for the
-     * full list.
+     * Register PlaceholderAPI integration for the level system.
+     * <p>
+     * Placeholders are exposed under the global {@code zshop_} prefix declared
+     * by {@link fr.maxlego08.shop.placeholder.DistantPlaceholder}. The full
+     * list lives in the PR description and the project README.
      */
     public void registerPlaceholders() {
         LocalPlaceholder localPlaceholder = LocalPlaceholder.getInstance();
