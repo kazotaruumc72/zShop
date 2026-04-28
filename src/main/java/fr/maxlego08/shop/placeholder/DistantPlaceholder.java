@@ -28,7 +28,7 @@ public class DistantPlaceholder extends PlaceholderExpansion {
 
 	@Override
 	public String getVersion() {
-		return this.placeholder.getPlugin().getDescription().getVersion();
+		return "4.0.0";
 	}
 
 	@Override
