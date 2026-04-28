@@ -33,7 +33,7 @@ public class ZShowItemButton extends ShowItemButton {
         if (itemButton == null) return super.getCustomItemStack(player, useCache, placeholders);
 
         ItemStack itemStack = itemButton.getCustomItemStack(player, useCache, placeholders);
-        itemStack.setAmount(playerCache.getAmount());
+        itemStack.setAmount(Math.max(1, playerCache.getAmount()));
 
         ItemMeta itemMeta = itemStack.getItemMeta();
 
