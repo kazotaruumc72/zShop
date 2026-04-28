@@ -67,7 +67,18 @@ public enum Message {
     RESET_LIMIT_PLAYERS_SUCCESS("§aYou have successfully reset the player limits for all items."),
     RESET_LIMIT_PLAYER_ITEM_SUCCESS("§aYou have successfully reset the player limits %type% for §f%item%§a."),
     RESET_LIMIT_SERVERS_SUCCESS("§aYou have successfully reset the server limits for all items."),
-    RESET_LIMIT_SERVER_ITEM_SUCCESS("§aYou have successfully reset the server limits %type% for §f%item%§a.")
+    RESET_LIMIT_SERVER_ITEM_SUCCESS("§aYou have successfully reset the server limits %type% for §f%item%§a."),
+    DESCRIPTION_LEVEL("Manage shop levels"),
+    DESCRIPTION_LEVEL_GET("Display the shop level of a player"),
+    DESCRIPTION_LEVEL_SET("Set the shop level of a player"),
+    DESCRIPTION_LEVEL_RESET("Reset the shop level of a player"),
+    LEVEL_UP("§aYou have just reached shop level §e%level%§a! Bonus§7: §e%bonus%%§a."),
+    LEVEL_GET_SELF("§eYour shop level§7: §a%level%§7. §eItems traded§7: §a%items%§7. §eBonus§7: §a%bonus%%§7."),
+    LEVEL_GET_OTHER("§eShop level of §f%player%§e§7: §a%level%§7. §eItems traded§7: §a%items%§7. §eBonus§7: §a%bonus%%§7."),
+    LEVEL_SET_SUCCESS("§aShop level of §f%player%§a set to §e%level%§a."),
+    LEVEL_RESET_SUCCESS("§aShop level of §f%player%§a has been reset."),
+    LEVEL_INVALID("§cInvalid level. Allowed range§7: §f%min% §7- §f%max%§c."),
+    LEVEL_PLAYER_NOT_FOUND("§cUnable to find the player §f%player%§c.")
 
     ;
 

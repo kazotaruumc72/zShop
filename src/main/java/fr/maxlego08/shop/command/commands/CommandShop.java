@@ -14,6 +14,7 @@ public class CommandShop extends VCommand {
         this.addSubCommand(new CommandShopLogs(plugin));
         this.addSubCommand(new CommandShopConvert(plugin));
         this.addSubCommand(new CommandShopResetLimit(plugin));
+        this.addSubCommand(new CommandShopLevel(plugin));
     }
 
     @Override

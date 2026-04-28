@@ -113,18 +113,22 @@ public class ZItemButton extends ItemButton {
     @Override
     public double getSellPrice(Player player, int amount) {
         AtomicReference<Double> price = new AtomicReference<>(getSellPrice(amount));
-        Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.SELL);
-        if (this.affectByPriceModifier())
+        if (this.affectByPriceModifier()) {
+            Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.SELL);
             optional.ifPresent(modifier -> price.updateAndGet(v -> v * modifier.getModifier()));
+            price.updateAndGet(v -> this.plugin.getLevelManager().applySellBonus(player, v));
+        }
         return price.get();
     }
 
     @Override
     public double getBuyPrice(Player player, int amount) {
         AtomicReference<Double> price = new AtomicReference<>(getBuyPrice(amount));
-        Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.BUY);
-        if (this.affectByPriceModifier())
+        if (this.affectByPriceModifier()) {
+            Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.BUY);
             optional.ifPresent(modifier -> price.updateAndGet(v -> v * modifier.getModifier()));
+            price.updateAndGet(v -> this.plugin.getLevelManager().applyBuyBonus(player, v));
+        }
         return price.get();
     }
 
@@ -298,6 +302,8 @@ public class ZItemButton extends ItemButton {
 
         commands(amount, itemName, buyPrice, HistoryType.BUY, player);
         log(amount, itemName, buyPrice, player.getName(), player.getUniqueId(), HistoryType.BUY);
+
+        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), amount);
     }
 
     @Override
@@ -407,6 +413,8 @@ public class ZItemButton extends ItemButton {
 
         commands(realAmount, itemName, sellPrice, HistoryType.SELL, player);
         log(realAmount, itemName, sellPrice, player.getName(), player.getUniqueId(), HistoryType.SELL);
+
+        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), realAmount);
     }
 
     private void commands(int amount, String itemName, String price, HistoryType type, Player player) {
