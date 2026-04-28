@@ -114,6 +114,15 @@ public class LevelConfig {
      * Depending on quoting, the YAML parser may produce either a plain string
      * such as {@code "STICK:1"} or a single-entry map such as
      * {@code {nexo:item_id=1}}. This helper accepts both representations.
+     *
+     * <p>Older versions of the default {@code levels.yml} shipped unquoted
+     * entries like {@code - 1:0}. SnakeYAML applies YAML 1.1's sexagesimal
+     * resolver to those, turning {@code 1:0} into the integer {@code 60},
+     * {@code 2:2} into {@code 122}, and so on. To stay backwards compatible
+     * with files already extracted to disk, we accept bare {@link Number}
+     * entries and reverse the {@code H:M} conversion (so {@code 60} becomes
+     * {@code "1:0"}). A warning is logged so the user is aware that they
+     * should quote their entries.
      */
     private void parseEntry(Object raw, String fileName, java.util.function.BiConsumer<String, String> consumer) {
         if (raw == null) return;
@@ -130,6 +139,19 @@ public class LevelConfig {
             }
             consumer.accept(String.valueOf(entry.getKey()).trim(), String.valueOf(entry.getValue()).trim());
             return;
+        }
+        if (raw instanceof Number) {
+            long value = ((Number) raw).longValue();
+            if (value >= 0) {
+                long minutes = value % 60;
+                long hours = value / 60;
+                Logger.info("Entry in " + fileName + " was parsed as a sexagesimal number (" + value
+                        + "). Recovering it as " + hours + ":" + minutes
+                        + ". Please wrap your entries in quotes (e.g. '1:0') to silence this warning.",
+                        Logger.LogType.WARNING);
+                consumer.accept(String.valueOf(hours), String.valueOf(minutes));
+                return;
+            }
         }
         String entry = String.valueOf(raw);
         int idx = entry.lastIndexOf(':');

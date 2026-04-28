@@ -481,6 +481,9 @@ public class ZShopManager extends ZUtils implements ShopManager {
             /* REMOVE ITEMS AND UPDATE MONEY */
             prices.put(button.getEconomy(), prices.getOrDefault(button.getEconomy(), 0.0) + action.getPrice());
             InventoryUtils.removeItem(inventory, itemStack, actualSellAmount);
+
+            /* LEVEL PROGRESSION */
+            this.plugin.getLevelManager().addExp(player, material, actualSellAmount);
         });
 
         if (prices.isEmpty()) {
