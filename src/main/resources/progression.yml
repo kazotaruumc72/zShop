@@ -1,0 +1,32 @@
+####################################################
+#
+#  ███████╗░██████╗██╗░░██╗░█████╗░██████╗░
+#  ╚════██║██╔════╝██║░░██║██╔══██╗██╔══██╗
+#  ░░███╔═╝╚█████╗░███████║██║░░██║██████╔╝
+#  ██╔══╝░░░╚═══██╗██╔══██║██║░░██║██╔═══╝░
+#  ███████╗██████╔╝██║░░██║╚█████╔╝██║░░░░░
+#  ╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░
+#
+# Shop level progression.
+# Format:
+#   - <nextLevel>:<minimumItems>
+#
+# <nextLevel> is the level the player will reach.
+# <minimumItems> is the cumulated amount of items the player has to buy or sell
+# (counting individual items, not transactions) to unlock that level.
+#
+# A player always starts at the first level defined in levels.yml.
+# Levels listed here that are not defined in levels.yml are ignored.
+#
+####################################################
+
+progression:
+  - 2:5000
+  - 3:20000
+  - 4:50000
+  - 5:100000
+  - 6:200000
+  - 7:350000
+  - 8:550000
+  - 9:800000
+  - 10:1200000

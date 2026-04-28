@@ -21,6 +21,8 @@ import fr.maxlego08.shop.command.commands.CommandSellInventory;
 import fr.maxlego08.shop.command.commands.CommandShop;
 import fr.maxlego08.shop.economy.ZEconomyManager;
 import fr.maxlego08.shop.history.ZHistoryManager;
+import fr.maxlego08.shop.level.LevelConfig;
+import fr.maxlego08.shop.level.ZLevelManager;
 import fr.maxlego08.shop.limit.ZLimitManager;
 import fr.maxlego08.shop.listener.MenuListener;
 import fr.maxlego08.shop.loader.AddButtonLoader;
@@ -56,6 +58,8 @@ public class ShopPlugin extends ZPlugin {
     private final ShopManager shopManager = new ZShopManager(this);
     private final ZLimitManager limitManager = new ZLimitManager(this);
     private final TranslationManager translationManager = new ZTranslationManager(this);
+    private final LevelConfig levelConfig = new LevelConfig(this);
+    private final ZLevelManager levelManager = new ZLevelManager(this, levelConfig);
     public int minimumVersion = 1100;
     private HistoryManager historyManager;
     private InventoryManager inventoryManager;
@@ -131,6 +135,9 @@ public class ShopPlugin extends ZPlugin {
         this.limitManager.load(this.getPersist());
 
         this.saveDefaultConfig();
+        this.levelConfig.load();
+        this.levelManager.load(this.getPersist());
+        this.addSave(this.levelManager);
         this.economyManager.loadEconomies();
         this.loadButtons();
 
@@ -141,6 +148,7 @@ public class ShopPlugin extends ZPlugin {
 
         this.limitManager.registerPlaceholders();
         this.shopManager.registerPlaceholders();
+        this.levelManager.registerPlaceholders();
 
         this.limitManager.deletes();
         this.limitManager.verifyPlayersLimit();
@@ -183,6 +191,7 @@ public class ShopPlugin extends ZPlugin {
 
         super.reloadFiles();
         this.reloadConfig();
+        this.levelConfig.load();
         this.economyManager.loadEconomies();
         this.shopManager.loadConfig();
 
@@ -241,5 +250,13 @@ public class ShopPlugin extends ZPlugin {
 
     public TranslationManager getTranslationManager() {
         return translationManager;
+    }
+
+    public ZLevelManager getLevelManager() {
+        return levelManager;
+    }
+
+    public LevelConfig getLevelConfig() {
+        return levelConfig;
     }
 }

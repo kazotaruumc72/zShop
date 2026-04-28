@@ -1,0 +1,37 @@
+####################################################
+#
+#  ███████╗░██████╗██╗░░██╗░█████╗░██████╗░
+#  ╚════██║██╔════╝██║░░██║██╔══██╗██╔══██╗
+#  ░░███╔═╝╚█████╗░███████║██║░░██║██████╔╝
+#  ██╔══╝░░░╚═══██╗██╔══██║██║░░██║██╔═══╝░
+#  ███████╗██████╔╝██║░░██║╚█████╔╝██║░░░░░
+#  ╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░
+#
+# Shop level configuration.
+# Format:
+#   - <level>:<bonus>
+#
+# <level> is the shop level number.
+# <bonus> is a percentage (integer or decimal) that:
+#   - Increases the amount of money earned when the player sells an item
+#   - Decreases the price the player pays when buying an item
+#
+# Example: at level 3 with a bonus of 4, an item sold for 3 will be sold for 3.12,
+# and an item bought for 10 will be bought for 9.60.
+#
+# Players need to have bought/sold the cumulated amount of items defined in
+# progression.yml to reach the next level.
+#
+####################################################
+
+levels:
+  - 1:0
+  - 2:2
+  - 3:4
+  - 4:6
+  - 5:8
+  - 6:10
+  - 7:12
+  - 8:14
+  - 9:16
+  - 10:20

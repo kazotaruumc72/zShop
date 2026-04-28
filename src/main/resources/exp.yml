@@ -1,0 +1,150 @@
+####################################################
+#
+#  ███████╗░██████╗██╗░░██╗░█████╗░██████╗░
+#  ╚════██║██╔════╝██║░░██║██╔══██╗██╔══██╗
+#  ░░███╔═╝╚█████╗░███████║██║░░██║██████╔╝
+#  ██╔══╝░░░╚═══██╗██╔══██║██║░░██║██╔═══╝░
+#  ███████╗██████╔╝██║░░██║╚█████╔╝██║░░░░░
+#  ╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░
+#
+# Experience gained per item bought or sold.
+# Format:
+#   - <ITEM>:<exp>
+#
+# <ITEM> can be:
+#   - A vanilla material name (e.g. STICK)
+#   - A custom item id from another plugin (e.g. nexo:my_item, oraxen:my_item, itemsadder:namespace:id)
+#
+# An item that is not listed here will give 0 experience.
+#
+####################################################
+
+items:
+  # Vanilla items present in the default shop categories
+  - ACACIA_LOG:1
+  - AMETHYST_SHARD:1
+  - ANDESITE:1
+  - APPLE:1
+  - BASALT:1
+  - BEACON:1
+  - BEETROOT:1
+  - BIRCH_LOG:1
+  - BLACKSTONE:1
+  - BLAZE_POWDER:1
+  - BONE:1
+  - BOOK:1
+  - BREWING_STAND:1
+  - BRICK:1
+  - CACTUS:1
+  - CARROT:1
+  - CARROT_ITEM:1
+  - CAULDRON:1
+  - CAULDRON_ITEM:1
+  - COAL:1
+  - COMPARATOR:1
+  - DARK_OAK_LOG:1
+  - DARK_PRISMARINE:1
+  - DIAMOND:1
+  - DIAMOND_BOOTS:1
+  - DIAMOND_CHESTPLATE:1
+  - DIAMOND_HELMET:1
+  - DIAMOND_LEGGINGS:1
+  - DIAMOND_SWORD:1
+  - DIORITE:1
+  - DIRT:1
+  - DISPENSER:1
+  - DROPPER:1
+  - EGG:1
+  - EMERALD:1
+  - ENCHANTED_BOOK:1
+  - ENCHANTING_TABLE:1
+  - ENCHANTMENT_TABLE:1
+  - ENDER_CHEST:1
+  - ENDER_PEARL:1
+  - END_STONE:1
+  - END_STONE_BRICKS:1
+  - EXPERIENCE_BOTTLE:1
+  - EXP_BOTTLE:1
+  - GOLD_INGOT:1
+  - GRANITE:1
+  - GRASS:1
+  - GRASS_BLOCK:1
+  - GRAVEL:1
+  - GUNPOWDER:1
+  - HONEYCOMB:1
+  - HOPPER:1
+  - ICE:1
+  - INK_SAC:1
+  - IRON_BOOTS:1
+  - IRON_CHESTPLATE:1
+  - IRON_HELMET:1
+  - IRON_INGOT:1
+  - IRON_LEGGINGS:1
+  - IRON_SWORD:1
+  - JUNGLE_LOG:1
+  - LAPIS_LAZULI:1
+  - LEATHER:1
+  - LEVER:1
+  - LOG:1
+  - MELON:1
+  - MELON_BLOCK:1
+  - NAME_TAG:1
+  - NETHERITE_BOOTS:1
+  - NETHERITE_CHESTPLATE:1
+  - NETHERITE_HELMET:1
+  - NETHERITE_INGOT:1
+  - NETHERITE_LEGGINGS:1
+  - NETHERITE_SWORD:1
+  - NETHERRACK:1
+  - NETHER_BRICKS:1
+  - NETHER_WART:1
+  - OAK_LOG:1
+  - OBSERVER:1
+  - PISTON:1
+  - POTATO:1
+  - POTATO_ITEM:1
+  - PRISMARINE:1
+  - PUMPKIN:1
+  - PURPUR_BLOCK:1
+  - QUARTZ:1
+  - REDSTONE:1
+  - REDSTONE_BLOCK:1
+  - REDSTONE_TORCH:1
+  - RED_NETHER_BRICKS:1
+  - RED_SAND:1
+  - REPEATER:1
+  - ROTTEN_FLESH:1
+  - SADDLE:1
+  - SAND:1
+  - SEA_LANTERN:1
+  - SLIME_BLOCK:1
+  - SOUL_SAND:1
+  - SOUL_SOIL:1
+  - SPIDER_EYE:1
+  - SPRUCE_LOG:1
+  - STICKY_PISTON:1
+  - STONE:1
+  - STONE_BRICKS:1
+  - STONE_BUTTON:1
+  - SUGAR_CANE:1
+  - TRIPWIRE_HOOK:1
+  - WHEAT:1
+
+  # Legacy numeric materials still referenced in 1.12 inventories
+  - '29:1'
+  - '33:1'
+  - '76:1'
+  - '77:1'
+  - '121:1'
+  - '162:1'
+  - '289:1'
+  - '338:1'
+  - '351:1'
+  - '356:1'
+  - '372:1'
+  - '404:1'
+
+  # Example custom items (nexo / oraxen / itemsadder). Uncomment and adapt to your needs.
+  # - 'nexo:my_item_id':1
+  # - 'oraxen:my_item_id':1
+  # - 'itemsadder:namespace:my_item_id':1
