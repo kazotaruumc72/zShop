@@ -311,7 +311,7 @@ public class ZShopManager extends ZUtils implements ShopManager {
 
         if (economyAction instanceof ItemButton button) {
             playerCache.setItemButton(button);
-            playerCache.setItemAmount(button.getItemStack().parseAmount(player));
+            playerCache.setItemAmount(Math.max(1, button.getItemStack().parseAmount(player)));
         }
         playerCache.setEconomyAction(economyAction);
 
