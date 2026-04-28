@@ -2,20 +2,25 @@ package fr.maxlego08.shop.level;
 
 import com.google.gson.reflect.TypeToken;
 import fr.maxlego08.shop.ShopPlugin;
+import fr.maxlego08.shop.placeholder.LocalPlaceholder;
 import fr.maxlego08.shop.zcore.enums.Message;
 import fr.maxlego08.shop.zcore.utils.ZUtils;
 import fr.maxlego08.shop.zcore.utils.storage.Persist;
 import fr.maxlego08.shop.zcore.utils.storage.Saveable;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Manages the level/exp system at runtime: tracks per-player progression,
@@ -166,5 +171,116 @@ public class ZLevelManager extends ZUtils implements Saveable {
 
     public Collection<PlayerLevel> getPlayers() {
         return this.players.values();
+    }
+
+    /**
+     * Build the leaderboard sorted by descending level, then by descending
+     * total items as a tie-breaker.
+     */
+    public List<PlayerLevel> getTop() {
+        return this.players.values().stream()
+                .sorted(Comparator.comparingInt(PlayerLevel::getLevel).reversed()
+                        .thenComparing(Comparator.comparingLong(PlayerLevel::getTotalItems).reversed()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @param rank 1-based rank
+     * @return the {@link PlayerLevel} at the given rank, or {@code null} if it does not exist.
+     */
+    public PlayerLevel getTop(int rank) {
+        if (rank <= 0) return null;
+        List<PlayerLevel> top = getTop();
+        if (rank > top.size()) return null;
+        return top.get(rank - 1);
+    }
+
+    /**
+     * Compute the progression percentage of the player towards the next level,
+     * clamped to {@code [0, 100]}. Players that have reached the maximum level
+     * always return {@code 100}.
+     */
+    public int getProgressPercent(PlayerLevel playerLevel) {
+        if (playerLevel == null) return 0;
+        Optional<Long> nextOpt = this.levelConfig.getItemsForNextLevel(playerLevel.getLevel());
+        if (nextOpt.isEmpty()) return 100;
+        long next = nextOpt.get();
+        long previous = this.levelConfig.getItemsForLevel(playerLevel.getLevel());
+        long denom = next - previous;
+        if (denom <= 0) return 100;
+        long progress = playerLevel.getTotalItems() - previous;
+        if (progress <= 0) return 0;
+        if (progress >= denom) return 100;
+        return (int) Math.round(progress * 100.0 / denom);
+    }
+
+    /**
+     * Register PlaceholderAPI integration for the level system. The plugin
+     * exposes them under the {@code zshop_} prefix; see the README/PR for the
+     * full list.
+     */
+    public void registerPlaceholders() {
+        LocalPlaceholder localPlaceholder = LocalPlaceholder.getInstance();
+
+        // Leaderboard placeholders. Registered first so the more specific
+        // prefixes are matched before the generic "level" one.
+        localPlaceholder.register("level_top_name_", (player, rank) -> {
+            PlayerLevel top = parseTop(rank);
+            if (top == null) return "";
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(top.getUniqueId());
+            String name = offlinePlayer.getName();
+            return name != null ? name : top.getUniqueId().toString();
+        });
+        localPlaceholder.register("level_top_level_", (player, rank) -> {
+            PlayerLevel top = parseTop(rank);
+            return top == null ? "0" : String.valueOf(top.getLevel());
+        });
+        localPlaceholder.register("level_top_items_", (player, rank) -> {
+            PlayerLevel top = parseTop(rank);
+            return top == null ? "0" : String.valueOf(top.getTotalItems());
+        });
+
+        // Progression placeholders for the requesting player.
+        localPlaceholder.register("level_progress_required", (player, string) -> {
+            if (player == null) return "0";
+            PlayerLevel pl = getOrCreate(player.getUniqueId());
+            return String.valueOf(this.levelConfig.getItemsForNextLevel(pl.getLevel()).orElse(pl.getTotalItems()));
+        });
+        localPlaceholder.register("level_progress_remaining", (player, string) -> {
+            if (player == null) return "0";
+            PlayerLevel pl = getOrCreate(player.getUniqueId());
+            Optional<Long> next = this.levelConfig.getItemsForNextLevel(pl.getLevel());
+            if (next.isEmpty()) return "0";
+            return String.valueOf(Math.max(0L, next.get() - pl.getTotalItems()));
+        });
+        localPlaceholder.register("level_progress_percent", (player, string) -> {
+            if (player == null) return "0";
+            return String.valueOf(getProgressPercent(getOrCreate(player.getUniqueId())));
+        });
+        localPlaceholder.register("level_progress", (player, string) -> {
+            if (player == null) return "0";
+            return String.valueOf(getOrCreate(player.getUniqueId()).getTotalItems());
+        });
+        localPlaceholder.register("level_bonus", (player, string) -> {
+            if (player == null) return "0";
+            double bonus = this.levelConfig.getBonusPercent(getOrCreate(player.getUniqueId()).getLevel());
+            return formatBonus(bonus);
+        });
+        localPlaceholder.register("level_max", (player, string) -> String.valueOf(this.levelConfig.getMaxLevel()));
+
+        // Generic "level" matches anything starting with "level"; register it last.
+        localPlaceholder.register("level", (player, string) -> {
+            if (player == null) return String.valueOf(this.levelConfig.getMinLevel());
+            return String.valueOf(getOrCreate(player.getUniqueId()).getLevel());
+        });
+    }
+
+    private PlayerLevel parseTop(String rank) {
+        if (rank == null || rank.isEmpty()) return null;
+        try {
+            return getTop(Integer.parseInt(rank.trim()));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

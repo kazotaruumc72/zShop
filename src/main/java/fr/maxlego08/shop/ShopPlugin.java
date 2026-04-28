@@ -148,6 +148,7 @@ public class ShopPlugin extends ZPlugin {
 
         this.limitManager.registerPlaceholders();
         this.shopManager.registerPlaceholders();
+        this.levelManager.registerPlaceholders();
 
         this.limitManager.deletes();
         this.limitManager.verifyPlayersLimit();

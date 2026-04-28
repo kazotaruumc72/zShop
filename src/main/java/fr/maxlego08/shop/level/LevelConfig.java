@@ -196,6 +196,15 @@ public class LevelConfig {
     }
 
     /**
+     * @return the cumulated items required to reach the given level, or 0 if
+     *         the level is the minimum (or has no progression entry).
+     */
+    public long getItemsForLevel(int level) {
+        Long required = this.progression.get(level);
+        return required == null ? 0L : required;
+    }
+
+    /**
      * @return the cumulated items required to reach the next level, or empty if already at the maximum level.
      */
     public Optional<Long> getItemsForNextLevel(int currentLevel) {
