@@ -44,7 +44,12 @@ public interface Placeholder {
                 // Older PAPI versions may not expose getLocalExpansionManager;
                 // fall back to the legacy static API below.
                 try {
-                    PlaceholderAPI.unregisterExpansion(identifier);
+                    for (PlaceholderExpansion existing : PlaceholderAPI.getExpansions()) {
+                        if (existing != null && identifier.equalsIgnoreCase(existing.getIdentifier())) {
+                            PlaceholderAPI.unregisterExpansion(existing);
+                            break;
+                        }
+                    }
                 } catch (LinkageError | Exception ignored2) {
                     // Nothing else we can do; the register() call below will
                     // simply be a no-op if registration is rejected.
