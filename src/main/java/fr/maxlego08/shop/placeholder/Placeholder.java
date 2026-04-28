@@ -40,12 +40,12 @@ public interface Placeholder {
                 if (existing != null) {
                     existing.unregister();
                 }
-            } catch (Throwable ignored) {
+            } catch (LinkageError | Exception ignored) {
                 // Older PAPI versions may not expose getLocalExpansionManager;
                 // fall back to the legacy static API below.
                 try {
                     PlaceholderAPI.unregisterExpansion(identifier);
-                } catch (Throwable ignored2) {
+                } catch (LinkageError | Exception ignored2) {
                     // Nothing else we can do; the register() call below will
                     // simply be a no-op if registration is rejected.
                 }
