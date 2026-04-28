@@ -41,19 +41,10 @@ public interface Placeholder {
                     existing.unregister();
                 }
             } catch (LinkageError | Exception ignored) {
-                // Older PAPI versions may not expose getLocalExpansionManager;
-                // fall back to the legacy static API below.
-                try {
-                    for (PlaceholderExpansion existing : PlaceholderAPI.getExpansions()) {
-                        if (existing != null && identifier.equalsIgnoreCase(existing.getIdentifier())) {
-                            PlaceholderAPI.unregisterExpansion(existing);
-                            break;
-                        }
-                    }
-                } catch (LinkageError | Exception ignored2) {
-                    // Nothing else we can do; the register() call below will
-                    // simply be a no-op if registration is rejected.
-                }
+                // Older PAPI versions may not expose getLocalExpansionManager.
+                // The pinned PAPI (2.11.x) always provides it, so there is
+                // nothing else to try here; the register() call below will
+                // simply be a no-op if registration is rejected.
             }
 
             PlaceholderExpansion expansion = new DistantPlaceholder(LocalPlaceholder.getInstance());
