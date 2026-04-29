@@ -54,7 +54,7 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
     }
 
     /**
-     * Initialise the placeholder integration. Called once during plugin
+     * Initialize the placeholder integration. Called once during plugin
      * enable. When PlaceholderAPI is installed the expansion is registered;
      * otherwise the static facade falls back to local resolution.
      *
@@ -105,7 +105,7 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
     private static String localReplace(Player player, String value) {
         if (value == null || value.indexOf('%') < 0 || instance == null) return value;
         Matcher matcher = LOCAL_PATTERN.matcher(value);
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         while (matcher.find()) {
             String token = matcher.group(1);
             String replacement = null;
