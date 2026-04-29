@@ -82,6 +82,11 @@ public class LevelConfig {
                 try {
                     int level = Integer.parseInt(key);
                     double bonus = Double.parseDouble(value);
+                    if (level <= 0) {
+                        Logger.info("Invalid level in levels.yml: " + level + " (must be >= 1). Entry ignored.",
+                                Logger.LogType.WARNING);
+                        return;
+                    }
                     this.levels.add(new ShopLevel(level, bonus));
                 } catch (NumberFormatException ex) {
                     Logger.info("Invalid number in levels.yml for entry: " + key + ":" + value, Logger.LogType.WARNING);
@@ -89,6 +94,10 @@ public class LevelConfig {
             });
         }
         this.levels.sort(Comparator.comparingInt(ShopLevel::getLevel));
+        if (this.levels.isEmpty()) {
+            Logger.info("levels.yml has no valid entries; %zshop_level% will fall back to 1. "
+                    + "Make sure each entry is quoted, e.g. - '1:0'.", Logger.LogType.WARNING);
+        }
     }
 
     private void loadProgression() {
@@ -101,6 +110,11 @@ public class LevelConfig {
                 try {
                     int level = Integer.parseInt(key);
                     long amount = Long.parseLong(value);
+                    if (level <= 0) {
+                        Logger.info("Invalid level in progression.yml: " + level + " (must be >= 1). Entry ignored.",
+                                Logger.LogType.WARNING);
+                        return;
+                    }
                     this.progression.put(level, amount);
                 } catch (NumberFormatException ex) {
                     Logger.info("Invalid number in progression.yml for entry: " + key + ":" + value, Logger.LogType.WARNING);
@@ -142,7 +156,12 @@ public class LevelConfig {
         }
         if (raw instanceof Number) {
             long value = ((Number) raw).longValue();
-            if (value >= 0) {
+            // YAML 1.1 sexagesimal "H:M" requires hours >= 1 and minutes in [0,59],
+            // so the smallest possible result is 1*60+0 = 60. Any bare number below
+            // that cannot be the byproduct of sexagesimal parsing — treat it as a
+            // genuinely invalid entry instead of silently turning, e.g., `5` into
+            // `0:5` (level 0, which then breaks %zshop_level%/%zshop_level_max%).
+            if (value >= 60) {
                 long minutes = value % 60;
                 long hours = value / 60;
                 Logger.info("Entry in " + fileName + " was parsed as a sexagesimal number (" + value
@@ -176,16 +195,21 @@ public class LevelConfig {
 
     /**
      * @return the minimum level number defined in levels.yml, or 1 if none is defined.
+     *         Always returns at least 1 even when {@code levels.yml} contains
+     *         only invalid entries, so {@code %zshop_level%} never renders as 0.
      */
     public int getMinLevel() {
-        return this.levels.isEmpty() ? 1 : this.levels.get(0).getLevel();
+        if (this.levels.isEmpty()) return 1;
+        return Math.max(1, this.levels.get(0).getLevel());
     }
 
     /**
      * @return the maximum level number defined in levels.yml, or {@link #getMinLevel()} if none is defined.
+     *         Always returns at least 1.
      */
     public int getMaxLevel() {
-        return this.levels.isEmpty() ? getMinLevel() : this.levels.get(this.levels.size() - 1).getLevel();
+        if (this.levels.isEmpty()) return getMinLevel();
+        return Math.max(1, this.levels.get(this.levels.size() - 1).getLevel());
     }
 
     public List<ShopLevel> getLevels() {
