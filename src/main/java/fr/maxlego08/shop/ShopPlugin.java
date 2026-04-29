@@ -59,6 +59,7 @@ public class ShopPlugin extends ZPlugin {
     private final TranslationManager translationManager = new ZTranslationManager(this);
     private final LevelConfig levelConfig = new LevelConfig(this);
     private final ZLevelManager levelManager = new ZLevelManager(this, levelConfig);
+    private LevelBossBarManager bossBarManager;
     public int minimumVersion = 1100;
     private HistoryManager historyManager;
     private InventoryManager inventoryManager;
@@ -134,6 +135,10 @@ public class ShopPlugin extends ZPlugin {
         this.levelConfig.load();
         this.levelManager.load(this.getPersist());
         this.addSave(this.levelManager);
+        this.bossBarManager = new LevelBossBarManager(this);
+        this.bossBarManager.load();
+        this.levelManager.setBossBarManager(this.bossBarManager);
+        Bukkit.getPluginManager().registerEvents(new fr.maxlego08.shop.level.LevelBossBarListener(this.bossBarManager), this);
         this.economyManager.loadEconomies();
         this.loadButtons();
 
@@ -169,6 +174,7 @@ public class ShopPlugin extends ZPlugin {
             this.limitManager.save(this.getPersist());
             this.saveFiles();
         }
+        if (this.bossBarManager != null) this.bossBarManager.removeAll();
 
         this.postDisable();
     }
@@ -184,6 +190,7 @@ public class ShopPlugin extends ZPlugin {
         super.reloadFiles();
         this.reloadConfig();
         this.levelConfig.load();
+        if (this.bossBarManager != null) this.bossBarManager.load();
         this.economyManager.loadEconomies();
         this.shopManager.loadConfig();
 

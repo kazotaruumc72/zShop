@@ -31,9 +31,10 @@ public class ZLevelManager extends ZUtils implements Saveable {
 
     private static final String FILE_NAME = "playerlevels";
 
-    private final transient ShopPlugin plugin;
-    private final transient LevelConfig levelConfig;
-    private final transient Map<UUID, PlayerLevel> players = new HashMap<>();
+    private final ShopPlugin plugin;
+    private final LevelConfig levelConfig;
+    private final Map<UUID, PlayerLevel> players = new HashMap<>();
+    private LevelBossBarManager bossBarManager;
 
     public ZLevelManager(ShopPlugin plugin, LevelConfig levelConfig) {
         this.plugin = plugin;
@@ -42,6 +43,13 @@ public class ZLevelManager extends ZUtils implements Saveable {
 
     public LevelConfig getConfig() {
         return this.levelConfig;
+    }
+
+    /**
+     * Wire the bossbar manager. Called once during plugin enable.
+     */
+    public void setBossBarManager(LevelBossBarManager bossBarManager) {
+        this.bossBarManager = bossBarManager;
     }
 
     /**
@@ -135,6 +143,12 @@ public class ZLevelManager extends ZUtils implements Saveable {
                     "%bonus%", formatBonus(bonus));
         } else if (newLevel != previousLevel) {
             playerLevel.setLevel(newLevel);
+        }
+
+        // Refresh the progression bossbar so the player gets immediate visual
+        // feedback (does nothing when the bossbar is disabled in levels.yml).
+        if (this.bossBarManager != null) {
+            this.bossBarManager.update(player, playerLevel, this.levelConfig);
         }
         return playerLevel;
     }

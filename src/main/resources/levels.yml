@@ -30,6 +30,28 @@
 count-buy: true
 count-sell: true
 
+# Progression bossbar shown to the player whenever they buy / sell something.
+# The bar fills as they progress within the current level bracket and is
+# automatically hidden after `duration-seconds` of inactivity.
+#
+# Available placeholders inside `title`:
+#   %level%       current shop level
+#   %level_max%   maximum level defined in this file
+#   %progress%    items accumulated within the current level bracket
+#   %required%   items needed to reach the next level (within the bracket)
+#   %total%       lifetime cumulated items (buy + sell)
+#   %percent%     0 - 100 progression toward the next level
+#   %bonus%       sell/buy bonus percent at the current level
+#
+# `color` accepts: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
+# `style` accepts: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+bossbar:
+  enabled: true
+  title: "&eShop level &6%level% &7| &a%progress%&7/&a%required% &7(&f%percent%%&7)"
+  color: GREEN
+  style: SEGMENTED_10
+  duration-seconds: 5
+
 # NOTE: Each entry is quoted because YAML 1.1 (used by Bukkit/SnakeYAML)
 # would otherwise parse "1:0", "2:2", ... as sexagesimal numbers
 # (1*60+0 = 60, 2*60+2 = 122, ...), which would silently break the level
