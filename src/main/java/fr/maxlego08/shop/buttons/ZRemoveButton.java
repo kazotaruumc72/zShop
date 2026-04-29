@@ -6,7 +6,7 @@ import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.api.PlayerCache;
 import fr.maxlego08.shop.api.buttons.AddButton;
 import fr.maxlego08.shop.api.buttons.ShowItemButton;
-import fr.maxlego08.shop.placeholder.Placeholder;
+import fr.maxlego08.shop.placeholder.ZShopPlaceholders;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,7 @@ public class ZRemoveButton extends AddButton {
     public int parseInt(Player player) {
         int amount = 1;
         try {
-            amount = Integer.parseInt(Placeholder.getPlaceholder().setPlaceholders(player, this.amount));
+            amount = Integer.parseInt(ZShopPlaceholders.setPlaceholders(player, this.amount));
         } catch (Exception ignored) {
         }
         return amount;

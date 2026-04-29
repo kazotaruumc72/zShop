@@ -25,8 +25,6 @@ import fr.maxlego08.shop.api.limit.PlayerLimit;
 import fr.maxlego08.shop.api.utils.PriceModifierCache;
 import fr.maxlego08.shop.history.ZHistory;
 import fr.maxlego08.shop.inventory.SellInventoryHolder;
-import fr.maxlego08.shop.placeholder.ItemButtonPlaceholder;
-import fr.maxlego08.shop.placeholder.LocalPlaceholder;
 import fr.maxlego08.shop.save.AbbreviateNumberConfig;
 import fr.maxlego08.shop.save.Config;
 import fr.maxlego08.shop.save.LogConfig;
@@ -76,7 +74,6 @@ public class ZShopManager extends ZUtils implements ShopManager {
 
     private final ShopPlugin plugin;
     private final Map<UUID, PlayerCache> cachePlayers = new HashMap<>();
-    private final DecimalFormat decimalFormat = new DecimalFormat("#.##");
     private final List<ItemButton> itemButtons = new ArrayList<>();
 
     public ZShopManager(ShopPlugin plugin) {
@@ -157,26 +154,10 @@ public class ZShopManager extends ZUtils implements ShopManager {
 
     @Override
     public void registerPlaceholders() {
-        LocalPlaceholder localPlaceholder = LocalPlaceholder.getInstance();
-
-        /*localPlaceholder.register("item_max", (player, args) -> {
-            PlayerCache playerCache = getCache(player);
-            ItemButton itemButton = playerCache.getItemButton();
-            return itemButton == null ? "0" : String.valueOf(itemButton.getMaxStack());
-        });*/
-        localPlaceholder.register("modifier_sell", (player, args) -> priceModifierPrice(getPriceModifier(player, PriceType.SELL), args.isEmpty()));
-        localPlaceholder.register("modifier_buy", (player, args) -> priceModifierPrice(getPriceModifier(player, PriceType.BUY), args.isEmpty()));
-
-        localPlaceholder.register("item_", new ItemButtonPlaceholder(this.plugin, this));
-    }
-
-    private String priceModifierPrice(Optional<PriceModifier> optional, boolean isValue) {
-        if (isValue) {
-            return optional.map(priceModifier -> String.valueOf(priceModifier.getModifier())).orElse("1");
-        } else {
-            double percent = (optional.map(PriceModifier::getModifier).orElse(1.0) * 100) - 100;
-            return decimalFormat.format(percent);
-        }
+        // No-op: zShop's PlaceholderAPI integration is now self-contained in
+        // ZShopPlaceholders, registered via ZShopPlaceholders.initialize(...)
+        // during ShopPlugin#onEnable. This method is kept to honour the
+        // public ShopManager API contract.
     }
 
     @Override

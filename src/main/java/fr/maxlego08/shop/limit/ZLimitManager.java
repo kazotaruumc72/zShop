@@ -5,8 +5,6 @@ import fr.maxlego08.shop.api.limit.Limit;
 import fr.maxlego08.shop.api.limit.LimitType;
 import fr.maxlego08.shop.api.limit.LimiterManager;
 import fr.maxlego08.shop.api.limit.PlayerLimit;
-import fr.maxlego08.shop.placeholder.LocalPlaceholder;
-import fr.maxlego08.shop.save.Config;
 import fr.maxlego08.shop.zcore.utils.ZUtils;
 import fr.maxlego08.shop.zcore.utils.storage.Persist;
 import fr.maxlego08.shop.zcore.utils.storage.Saveable;
@@ -20,7 +18,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -41,35 +38,6 @@ public class ZLimitManager extends ZUtils implements LimiterManager, Saveable, L
 
     private File getFolder() {
         return new File(plugin.getDataFolder(), "players/");
-    }
-
-    public void registerPlaceholders() {
-
-        LocalPlaceholder localPlaceholder = LocalPlaceholder.getInstance();
-        localPlaceholder.register("limiter_time_server_sell_", (player, string) -> placeholderLimiter(LimitType.SERVER_SELL, string, false));
-        localPlaceholder.register("limiter_time_server_buy_", (player, string) -> placeholderLimiter(LimitType.SERVER_BUY, string, false));
-        localPlaceholder.register("limiter_time_player_buy_", (player, string) -> placeholderLimiter(LimitType.PLAYER_BUY, string, false));
-        localPlaceholder.register("limiter_time_player_sell_", (player, string) -> placeholderLimiter(LimitType.PLAYER_SELL, string, false));
-
-        localPlaceholder.register("limiter_date_server_sell_", (player, string) -> placeholderLimiter(LimitType.SERVER_SELL, string, true));
-        localPlaceholder.register("limiter_date_server_buy_", (player, string) -> placeholderLimiter(LimitType.SERVER_BUY, string, true));
-        localPlaceholder.register("limiter_date_player_sell_", (player, string) -> placeholderLimiter(LimitType.PLAYER_SELL, string, true));
-        localPlaceholder.register("limiter_date_player_buy_", (player, string) -> placeholderLimiter(LimitType.PLAYER_BUY, string, true));
-
-    }
-
-    private String placeholderLimiter(LimitType limitType, String material, boolean isDate) {
-        Optional<Limit> optional = getLimit(limitType, material);
-        if (optional.isPresent()) {
-            Limit limit = optional.get();
-            limit.update();
-            if (isDate) {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(Config.dateFormat);
-                return simpleDateFormat.format(limit.getCalendar().getTime());
-            }
-            return limit.getFormattedTimeUntilNextTask();
-        }
-        return material + " not found for " + limitType.name();
     }
 
     @Override

@@ -20,7 +20,7 @@ import fr.maxlego08.shop.api.limit.Limit;
 import fr.maxlego08.shop.api.limit.LimiterManager;
 import fr.maxlego08.shop.api.limit.PlayerLimit;
 import fr.maxlego08.shop.history.ZHistory;
-import fr.maxlego08.shop.placeholder.Placeholder;
+import fr.maxlego08.shop.placeholder.ZShopPlaceholders;
 import fr.maxlego08.shop.save.Config;
 import fr.maxlego08.shop.save.LogConfig;
 import fr.maxlego08.shop.zcore.enums.Message;
@@ -424,7 +424,7 @@ public class ZItemButton extends ItemButton {
                 command = command.replace("%item%", itemName);
                 command = command.replace("%price%", price);
                 command = command.replace("%player%", player.getName());
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Placeholder.getPlaceholder().setPlaceholders(player, command));
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ZShopPlaceholders.setPlaceholders(player, command));
             }
         });
     }
@@ -582,7 +582,7 @@ public class ZItemButton extends ItemButton {
             line = line.replace("%playerBuyAmount%", optional.map(playerLimit -> String.valueOf(playerLimit.getBuyAmount(material))).orElse("0"));
             /* END PLAYER LIMIT */
 
-            itemLore.add(Placeholder.getPlaceholder().setPlaceholders(player, line));
+            itemLore.add(ZShopPlaceholders.setPlaceholders(player, line));
         }
         return itemLore;
     }
