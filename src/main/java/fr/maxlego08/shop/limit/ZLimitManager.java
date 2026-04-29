@@ -40,13 +40,6 @@ public class ZLimitManager extends ZUtils implements LimiterManager, Saveable, L
         return new File(plugin.getDataFolder(), "players/");
     }
 
-    public void registerPlaceholders() {
-        // PlaceholderAPI integration is now limited to the zshop_level_*
-        // placeholders registered by ZLevelManager. The previous
-        // limiter_time_* / limiter_date_* placeholders have been removed
-        // as part of the placeholder rework.
-    }
-
     @Override
     public void save(Persist persist) {
 

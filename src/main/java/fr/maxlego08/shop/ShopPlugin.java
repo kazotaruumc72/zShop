@@ -31,8 +31,7 @@ import fr.maxlego08.shop.loader.ItemButtonLoader;
 import fr.maxlego08.shop.loader.ItemConfirmButtonLoader;
 import fr.maxlego08.shop.loader.RemoveButtonLoader;
 import fr.maxlego08.shop.loader.ShowItemButtonLoader;
-import fr.maxlego08.shop.placeholder.LocalPlaceholder;
-import fr.maxlego08.shop.placeholder.Placeholder;
+import fr.maxlego08.shop.placeholder.ZShopPlaceholders;
 import fr.maxlego08.shop.save.Config;
 import fr.maxlego08.shop.save.MessageLoader;
 import fr.maxlego08.shop.zcore.ZPlugin;
@@ -95,12 +94,9 @@ public class ShopPlugin extends ZPlugin {
             return;
         }
 
-        LocalPlaceholder placeholder = LocalPlaceholder.getInstance();
-        placeholder.setPrefix("zshop");
-
         this.preEnable();
 
-        if (isEnable(Plugins.PLACEHOLDER)) Placeholder.getPlaceholder();
+        ZShopPlaceholders.initialize(this, isEnable(Plugins.PLACEHOLDER));
 
         this.historyManager = new ZHistoryManager(this, this.getPersist());
 
@@ -145,10 +141,6 @@ public class ShopPlugin extends ZPlugin {
         this.shopManager.loadConfig();
 
         new Metrics(this, 5881);
-
-        this.limitManager.registerPlaceholders();
-        this.shopManager.registerPlaceholders();
-        this.levelManager.registerPlaceholders();
 
         this.limitManager.deletes();
         this.limitManager.verifyPlayersLimit();

@@ -10,7 +10,6 @@ import fr.maxlego08.shop.inventory.VInventory;
 import fr.maxlego08.shop.inventory.ZInventoryManager;
 import fr.maxlego08.shop.listener.AdapterListener;
 import fr.maxlego08.shop.listener.ListenerAdapter;
-import fr.maxlego08.shop.placeholder.LocalPlaceholder;
 import fr.maxlego08.shop.zcore.enums.EnumInventory;
 import fr.maxlego08.shop.zcore.logger.Logger;
 import fr.maxlego08.shop.zcore.logger.Logger.LogType;
@@ -54,8 +53,6 @@ public abstract class ZPlugin extends JavaPlugin {
     private long enableTime;
 
     protected void preEnable() {
-
-        LocalPlaceholder.getInstance().setPlugin((ShopPlugin) this);
 
         this.enableTime = System.currentTimeMillis();
 

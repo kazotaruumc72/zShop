@@ -6,7 +6,7 @@ import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.api.PlayerCache;
 import fr.maxlego08.shop.api.buttons.ItemButton;
 import fr.maxlego08.shop.api.buttons.ShowItemButton;
-import fr.maxlego08.shop.placeholder.Placeholder;
+import fr.maxlego08.shop.placeholder.ZShopPlaceholders;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -45,7 +45,7 @@ public class ZShowItemButton extends ShowItemButton {
             line = line.replace("%sellPrice%", sellPrice);
             line = line.replace("%buyPrice%", buyPrice);
 
-            return Placeholder.getPlaceholder().setPlaceholders(player, line);
+            return ZShopPlaceholders.setPlaceholders(player, line);
         }).collect(Collectors.toList());
 
         this.plugin.getIManager().getMeta().updateLore(itemMeta, itemLore, LoreType.APPEND);
