@@ -10,7 +10,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,24 +35,33 @@ import java.util.stream.Collectors;
  *   <li>{@code %zshop_level_top_items_<rank>%} – total items at leaderboard rank</li>
  * </ul>
  * <p>
+ * Resolution is driven by two registries: {@link #exactResolvers} for fixed
+ * placeholder names and {@link #prefixResolvers} for placeholders that take an
+ * argument suffix (the leaderboard ones). Adding or removing a placeholder is
+ * a single line in {@link #registerDefaults()}.
+ * <p>
  * The class also exposes a static {@link #setPlaceholders(Player, String)} /
  * {@link #setPlaceholders(Player, List)} facade that delegates to PlaceholderAPI
  * when it is installed on the server, or falls back to a local resolver
- * otherwise.
+ * otherwise so configurations keep working without PAPI.
  */
 public class ZShopPlaceholders extends PlaceholderExpansion {
 
     public static final String IDENTIFIER = "zshop";
 
+    private static final String DEFAULT_NUMERIC = "0";
     private static final Pattern LOCAL_PATTERN = Pattern.compile("%([^%]+)%");
 
     private static volatile ZShopPlaceholders instance;
     private static volatile boolean papiAvailable;
 
     private final ShopPlugin plugin;
+    private final Map<String, PlaceholderResolver> exactResolvers = new LinkedHashMap<>();
+    private final Map<String, PlaceholderResolver> prefixResolvers = new LinkedHashMap<>();
 
     private ZShopPlaceholders(ShopPlugin plugin) {
         this.plugin = plugin;
+        registerDefaults();
     }
 
     /**
@@ -58,7 +69,7 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
      * enable. When PlaceholderAPI is installed the expansion is registered;
      * otherwise the static facade falls back to local resolution.
      *
-     * @param plugin     the zShop plugin instance
+     * @param plugin            the zShop plugin instance
      * @param hasPlaceholderApi {@code true} if PlaceholderAPI is enabled on the server
      */
     public static void initialize(ShopPlugin plugin, boolean hasPlaceholderApi) {
@@ -85,10 +96,10 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
     }
 
     /**
-     * Resolve every {@code %zshop_*%} occurrence inside {@code value}. When
+     * Resolve every placeholder occurrence inside {@code value}. When
      * PlaceholderAPI is installed the call is delegated to it (so any other
      * registered expansion also gets resolved); otherwise only zShop's own
-     * placeholders are replaced.
+     * placeholders are replaced and other tokens are left untouched.
      */
     public static String setPlaceholders(Player player, String value) {
         if (value == null || value.indexOf('%') < 0) return value;
@@ -153,80 +164,139 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
      */
     private String resolve(Player player, String params) {
         if (params == null) return null;
-        ZLevelManager levelManager = this.plugin.getLevelManager();
-        if (levelManager == null) return null;
+        ZLevelManager manager = this.plugin.getLevelManager();
+        if (manager == null) return null;
 
-        // Leaderboard placeholders: zshop_level_top_{name|level|items}_<rank>
-        if (params.startsWith("level_top_name_")) {
-            return resolveTopName(levelManager, params.substring("level_top_name_".length()));
-        }
-        if (params.startsWith("level_top_level_")) {
-            PlayerLevel top = parseTop(levelManager, params.substring("level_top_level_".length()));
-            return top == null ? "0" : String.valueOf(top.getLevel());
-        }
-        if (params.startsWith("level_top_items_")) {
-            PlayerLevel top = parseTop(levelManager, params.substring("level_top_items_".length()));
-            return top == null ? "0" : String.valueOf(top.getTotalItems());
+        LevelContext ctx = new LevelContext(player, manager);
+
+        // Prefix resolvers run first because their keys are more specific
+        // (e.g. "level_top_name_" subsumes any future "level_top" prefix).
+        for (Map.Entry<String, PlaceholderResolver> entry : this.prefixResolvers.entrySet()) {
+            String prefix = entry.getKey();
+            if (params.startsWith(prefix)) {
+                return entry.getValue().resolve(ctx, params.substring(prefix.length()));
+            }
         }
 
-        // Global level metadata placeholders.
-        if (params.equals("level_max")) {
-            return String.valueOf(levelManager.getConfig().getMaxLevel());
-        }
+        PlaceholderResolver exact = this.exactResolvers.get(params);
+        return exact == null ? null : exact.resolve(ctx, "");
+    }
 
-        // Player-bound placeholders below this point.
-        if (params.equals("level")) {
-            if (player == null) return String.valueOf(levelManager.getConfig().getMinLevel());
-            return String.valueOf(levelManager.getOrCreate(player.getUniqueId()).getLevel());
-        }
-        if (params.equals("level_bonus")) {
-            if (player == null) return "0";
-            double bonus = levelManager.getConfig().getBonusPercent(
-                    levelManager.getOrCreate(player.getUniqueId()).getLevel());
+    /**
+     * Wire the placeholder registry. The order in which prefix entries are
+     * added is preserved (the registry is a {@link LinkedHashMap}); when
+     * adding new prefix placeholders, register the most specific ones first.
+     */
+    private void registerDefaults() {
+        // %zshop_level%
+        registerExact("level", (ctx, arg) -> {
+            if (ctx.player() == null) return String.valueOf(ctx.manager().getConfig().getMinLevel());
+            return String.valueOf(ctx.playerLevel().getLevel());
+        });
+
+        // %zshop_level_max%
+        registerExact("level_max", (ctx, arg) -> String.valueOf(ctx.manager().getConfig().getMaxLevel()));
+
+        // %zshop_level_bonus%
+        registerExact("level_bonus", (ctx, arg) -> {
+            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            double bonus = ctx.manager().getConfig().getBonusPercent(ctx.playerLevel().getLevel());
             return ZLevelManager.formatBonus(bonus);
-        }
-        if (params.equals("level_progress")) {
-            if (player == null) return "0";
-            return String.valueOf(levelManager.getOrCreate(player.getUniqueId()).getTotalItems());
-        }
-        if (params.equals("level_progress_required")) {
-            if (player == null) return "0";
-            PlayerLevel pl = levelManager.getOrCreate(player.getUniqueId());
-            return String.valueOf(levelManager.getConfig()
+        });
+
+        // %zshop_level_progress%
+        registerExact("level_progress", (ctx, arg) -> {
+            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            return String.valueOf(ctx.playerLevel().getTotalItems());
+        });
+
+        // %zshop_level_progress_required%
+        registerExact("level_progress_required", (ctx, arg) -> {
+            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            PlayerLevel pl = ctx.playerLevel();
+            return String.valueOf(ctx.manager().getConfig()
                     .getItemsForNextLevel(pl.getLevel())
                     .orElse(pl.getTotalItems()));
-        }
-        if (params.equals("level_progress_remaining")) {
-            if (player == null) return "0";
-            PlayerLevel pl = levelManager.getOrCreate(player.getUniqueId());
-            Optional<Long> next = levelManager.getConfig().getItemsForNextLevel(pl.getLevel());
-            if (next.isEmpty()) return "0";
+        });
+
+        // %zshop_level_progress_remaining%
+        registerExact("level_progress_remaining", (ctx, arg) -> {
+            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            PlayerLevel pl = ctx.playerLevel();
+            Optional<Long> next = ctx.manager().getConfig().getItemsForNextLevel(pl.getLevel());
+            if (next.isEmpty()) return DEFAULT_NUMERIC;
             return String.valueOf(Math.max(0L, next.get() - pl.getTotalItems()));
-        }
-        if (params.equals("level_progress_percent")) {
-            if (player == null) return "0";
-            return String.valueOf(levelManager.getProgressPercent(
-                    levelManager.getOrCreate(player.getUniqueId())));
-        }
+        });
 
-        // Unknown placeholder: let PAPI/local resolver leave it untouched.
-        return null;
+        // %zshop_level_progress_percent%
+        registerExact("level_progress_percent", (ctx, arg) -> {
+            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            return String.valueOf(ctx.manager().getProgressPercent(ctx.playerLevel()));
+        });
+
+        // %zshop_level_top_name_<rank>%
+        registerPrefix("level_top_name_", (ctx, rank) -> {
+            PlayerLevel top = parseTop(ctx.manager(), rank);
+            if (top == null) return "";
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(top.getUniqueId());
+            String name = offlinePlayer.getName();
+            return name != null ? name : top.getUniqueId().toString();
+        });
+
+        // %zshop_level_top_level_<rank>%
+        registerPrefix("level_top_level_", (ctx, rank) -> {
+            PlayerLevel top = parseTop(ctx.manager(), rank);
+            return top == null ? DEFAULT_NUMERIC : String.valueOf(top.getLevel());
+        });
+
+        // %zshop_level_top_items_<rank>%
+        registerPrefix("level_top_items_", (ctx, rank) -> {
+            PlayerLevel top = parseTop(ctx.manager(), rank);
+            return top == null ? DEFAULT_NUMERIC : String.valueOf(top.getTotalItems());
+        });
     }
 
-    private String resolveTopName(ZLevelManager levelManager, String rankString) {
-        PlayerLevel top = parseTop(levelManager, rankString);
-        if (top == null) return "";
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(top.getUniqueId());
-        String name = offlinePlayer.getName();
-        return name != null ? name : top.getUniqueId().toString();
+    private void registerExact(String name, PlaceholderResolver resolver) {
+        this.exactResolvers.put(name, resolver);
     }
 
-    private PlayerLevel parseTop(ZLevelManager levelManager, String rankString) {
-        if (rankString == null || rankString.isEmpty()) return null;
+    private void registerPrefix(String prefix, PlaceholderResolver resolver) {
+        this.prefixResolvers.put(prefix, resolver);
+    }
+
+    private static PlayerLevel parseTop(ZLevelManager manager, String rank) {
+        if (rank == null || rank.isEmpty()) return null;
         try {
-            return levelManager.getTop(Integer.parseInt(rankString.trim()));
+            return manager.getTop(Integer.parseInt(rank.trim()));
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    /**
+     * Resolution context passed to every {@link PlaceholderResolver}. The
+     * {@link #playerLevel()} accessor lazily fetches (or creates) the
+     * {@link PlayerLevel} entry for the requesting player; callers must check
+     * {@link #player()} for nullity before using it because PAPI calls
+     * placeholders for offline contexts as well.
+     */
+    private record LevelContext(Player player, ZLevelManager manager) {
+
+        PlayerLevel playerLevel() {
+            return manager.getOrCreate(player.getUniqueId());
+        }
+    }
+
+    @FunctionalInterface
+    private interface PlaceholderResolver {
+        /**
+         * @param ctx      the resolution context
+         * @param argument the placeholder argument for prefix resolvers
+         *                 (e.g. the rank in {@code level_top_name_<rank>}),
+         *                 or an empty string for exact resolvers
+         * @return the placeholder value, or {@code null} to leave the token
+         *         unchanged
+         */
+        String resolve(LevelContext ctx, String argument);
     }
 }
