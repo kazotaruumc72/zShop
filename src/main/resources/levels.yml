@@ -24,6 +24,12 @@
 #
 ####################################################
 
+# What contributes to leveling up.
+# Set to false to ignore the corresponding action when computing progression.
+# Default (true / true): both buys and sells count toward the next level.
+count-buy: true
+count-sell: true
+
 # NOTE: Each entry is quoted because YAML 1.1 (used by Bukkit/SnakeYAML)
 # would otherwise parse "1:0", "2:2", ... as sexagesimal numbers
 # (1*60+0 = 60, 2*60+2 = 122, ...), which would silently break the level

@@ -3,6 +3,7 @@ package fr.maxlego08.shop.placeholder;
 import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.level.PlayerLevel;
 import fr.maxlego08.shop.level.ZLevelManager;
+import fr.maxlego08.shop.zcore.logger.Logger;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -49,11 +50,28 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
 
     public static final String IDENTIFIER = "zshop";
 
+    /**
+     * When {@code true}, every placeholder resolution call is logged to the
+     * console with the requesting player, the requested parameters and the
+     * computed value. Toggle with {@link #setDebug(boolean)} or via the
+     * {@code /zshoplugin debug} command.
+     */
+    private static volatile boolean debug = false;
+
     private static final String DEFAULT_NUMERIC = "0";
+    private static final String EMPTY_TOP_PLACEHOLDER = "-";
     private static final Pattern LOCAL_PATTERN = Pattern.compile("%([^%]+)%");
 
     private static volatile ZShopPlaceholders instance;
     private static volatile boolean papiAvailable;
+
+    public static void setDebug(boolean value) {
+        debug = value;
+    }
+
+    public static boolean isDebug() {
+        return debug;
+    }
 
     private final ShopPlugin plugin;
     private final Map<String, PlaceholderResolver> exactResolvers = new LinkedHashMap<>();
@@ -73,10 +91,20 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
      * @param hasPlaceholderApi {@code true} if PlaceholderAPI is enabled on the server
      */
     public static void initialize(ShopPlugin plugin, boolean hasPlaceholderApi) {
+        // Direct stdout so the message is visible even if the custom Logger
+        // is not set up yet, or if console formatting strips it.
+        System.out.println("[zShop][PAPI-INIT] hasPlaceholderApi=" + hasPlaceholderApi
+                + " jarBuildSentinel=BUILD-2 plugin=" + plugin.getDescription().getFullName());
+
         instance = new ZShopPlaceholders(plugin);
         papiAvailable = hasPlaceholderApi;
 
-        if (!hasPlaceholderApi) return;
+        if (!hasPlaceholderApi) {
+            System.out.println("[zShop][PAPI-INIT] PlaceholderAPI not detected, aborting registration.");
+            Logger.info("PlaceholderAPI not detected. zShop placeholders (%zshop_*%) will only be resolved inside zShop's own configs.",
+                    Logger.LogType.WARNING);
+            return;
+        }
 
         // PlaceholderAPI silently refuses to register an expansion when one
         // with the same identifier is already registered (e.g. the legacy
@@ -86,13 +114,72 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
             PlaceholderExpansion existing = PlaceholderAPIPlugin.getInstance()
                     .getLocalExpansionManager()
                     .getExpansion(IDENTIFIER);
-            if (existing != null) existing.unregister();
-        } catch (LinkageError | Exception ignored) {
+            if (existing != null && existing != instance) {
+                System.out.println("[zShop][PAPI-INIT] Found pre-existing expansion '" + IDENTIFIER
+                        + "' class=" + existing.getClass().getName()
+                        + " author=" + existing.getAuthor()
+                        + " version=" + existing.getVersion()
+                        + " - unregistering it.");
+                Logger.info("Unregistering a pre-existing PlaceholderAPI expansion '" + IDENTIFIER
+                        + "' (class " + existing.getClass().getName() + ") so zShop's built-in one can take over. "
+                        + "If this comes from plugins/PlaceholderAPI/expansions/, delete that JAR to avoid the conflict.",
+                        Logger.LogType.WARNING);
+                existing.unregister();
+            } else {
+                System.out.println("[zShop][PAPI-INIT] No pre-existing expansion '" + IDENTIFIER + "' detected.");
+            }
+        } catch (LinkageError | Exception ex) {
+            System.out.println("[zShop][PAPI-INIT] Could not query LocalExpansionManager: " + ex);
             // Older PAPI versions may not expose getLocalExpansionManager;
             // the register() call below will simply be a no-op if PAPI rejects it.
         }
 
-        instance.register();
+        boolean registered = instance.register();
+        System.out.println("[zShop][PAPI-INIT] register() returned " + registered
+                + " (exact=" + instance.exactResolvers.size()
+                + ", prefix=" + instance.prefixResolvers.size() + ")");
+        if (registered) {
+            Logger.info("PlaceholderAPI expansion '" + IDENTIFIER + "' registered ("
+                    + instance.exactResolvers.size() + " exact + " + instance.prefixResolvers.size()
+                    + " prefix placeholders). Test with: /papi parse <player> %zshop_level_max%",
+                    Logger.LogType.SUCCESS);
+        } else {
+            Logger.info("Failed to register the PlaceholderAPI expansion '" + IDENTIFIER
+                    + "'. Another plugin/expansion is probably holding the identifier; "
+                    + "remove plugins/PlaceholderAPI/expansions/Expansion-zShop.jar (if present) and run /papi reload.",
+                    Logger.LogType.ERROR);
+        }
+
+        // PAPI may load *.jar expansions from plugins/PlaceholderAPI/expansions/
+        // *after* zShop's onEnable, which silently overwrites our in-plugin
+        // expansion with the legacy eCloud one (e.g. version 1.0.2 by
+        // Maxlego08). Re-check periodically and reclaim the identifier so
+        // %zshop_*% placeholders always go through the up-to-date code.
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> reclaimIfHijacked(), 40L, 40L);
+    }
+
+    /**
+     * Re-register zShop's placeholder expansion if PlaceholderAPI currently
+     * holds another instance under the {@code zshop} identifier (typically a
+     * legacy eCloud {@code Expansion-zShop.jar} loaded after our onEnable).
+     */
+    private static void reclaimIfHijacked() {
+        if (instance == null || !papiAvailable) return;
+        try {
+            PlaceholderExpansion current = PlaceholderAPIPlugin.getInstance()
+                    .getLocalExpansionManager()
+                    .getExpansion(IDENTIFIER);
+            if (current == instance) return;
+            System.out.println("[zShop][PAPI-RECLAIM] Detected another expansion holding '" + IDENTIFIER
+                    + "' (class=" + (current == null ? "null" : current.getClass().getName())
+                    + ", version=" + (current == null ? "?" : current.getVersion())
+                    + "). Reclaiming the identifier.");
+            if (current != null) current.unregister();
+            boolean ok = instance.register();
+            System.out.println("[zShop][PAPI-RECLAIM] re-register() returned " + ok);
+        } catch (LinkageError | Exception ex) {
+            System.out.println("[zShop][PAPI-RECLAIM] Could not reclaim: " + ex);
+        }
     }
 
     /**
@@ -137,7 +224,7 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
     @Override
     public String getAuthor() {
         return this.plugin.getDescription().getAuthors().isEmpty()
-                ? "Maxlego08"
+                ? "Maxlego08, Kazotaruu_"
                 : this.plugin.getDescription().getAuthors().get(0);
     }
 
@@ -153,7 +240,34 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, String params) {
-        return resolve(player, params);
+        String result = resolve(player, params);
+        if (debug) {
+            System.out.println("[zShop][PAPI-DEBUG] onPlaceholderRequest player="
+                    + (player == null ? "null" : player.getName())
+                    + " params='" + params + "' -> "
+                    + (result == null ? "<null/unhandled>" : "'" + result + "'"));
+        }
+        return result;
+    }
+
+    /**
+     * Some PlaceholderAPI lookups (e.g. when another plugin caches a value for
+     * an offline target, or when the top placeholders are read for an empty
+     * context) provide only an {@link OfflinePlayer}. Resolve those too so
+     * leaderboard placeholders work even when the player on screen is offline.
+     */
+    @Override
+    public String onRequest(OfflinePlayer player, String params) {
+        Player online = player == null ? null : player.getPlayer();
+        String result = (online != null) ? resolve(online, params) : resolveOffline(player, params);
+        if (debug) {
+            System.out.println("[zShop][PAPI-DEBUG] onRequest player="
+                    + (player == null ? "null" : player.getName() + "/" + player.getUniqueId())
+                    + " online=" + (online != null)
+                    + " params='" + params + "' -> "
+                    + (result == null ? "<null/unhandled>" : "'" + result + "'"));
+        }
+        return result;
     }
 
     /**
@@ -167,8 +281,27 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
         ZLevelManager manager = this.plugin.getLevelManager();
         if (manager == null) return null;
 
-        LevelContext ctx = new LevelContext(player, manager);
+        LevelContext ctx = new LevelContext(player, player == null ? null : player.getUniqueId(), manager);
+        return resolveWith(ctx, params);
+    }
 
+    /**
+     * Offline counterpart of {@link #resolve(Player, String)}. The {@link Player}
+     * accessor in the context is null but the {@link PlayerLevel} can still be
+     * fetched through the player's UUID, so per-player placeholders
+     * ({@code %zshop_level%}, {@code %zshop_level_progress%}, …) keep working
+     * for offline targets.
+     */
+    private String resolveOffline(OfflinePlayer player, String params) {
+        if (params == null) return null;
+        ZLevelManager manager = this.plugin.getLevelManager();
+        if (manager == null) return null;
+
+        LevelContext ctx = new LevelContext(null, player == null ? null : player.getUniqueId(), manager);
+        return resolveWith(ctx, params);
+    }
+
+    private String resolveWith(LevelContext ctx, String params) {
         // Prefix resolvers run first because their keys are more specific
         // (e.g. "level_top_name_" subsumes any future "level_top" prefix).
         for (Map.Entry<String, PlaceholderResolver> entry : this.prefixResolvers.entrySet()) {
@@ -190,7 +323,7 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
     private void registerDefaults() {
         // %zshop_level%
         registerExact("level", (ctx, arg) -> {
-            if (ctx.player() == null) return String.valueOf(ctx.manager().getConfig().getMinLevel());
+            if (ctx.uuid() == null) return String.valueOf(ctx.manager().getConfig().getMinLevel());
             return String.valueOf(ctx.playerLevel().getLevel());
         });
 
@@ -199,20 +332,20 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
 
         // %zshop_level_bonus%
         registerExact("level_bonus", (ctx, arg) -> {
-            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return DEFAULT_NUMERIC;
             double bonus = ctx.manager().getConfig().getBonusPercent(ctx.playerLevel().getLevel());
             return ZLevelManager.formatBonus(bonus);
         });
 
         // %zshop_level_progress%
         registerExact("level_progress", (ctx, arg) -> {
-            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return DEFAULT_NUMERIC;
             return String.valueOf(ctx.playerLevel().getTotalItems());
         });
 
         // %zshop_level_progress_required%
         registerExact("level_progress_required", (ctx, arg) -> {
-            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return DEFAULT_NUMERIC;
             PlayerLevel pl = ctx.playerLevel();
             return String.valueOf(ctx.manager().getConfig()
                     .getItemsForNextLevel(pl.getLevel())
@@ -220,24 +353,32 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
         });
 
         // %zshop_level_progress_remaining%
+        // Items already accumulated within the current level bracket (counts
+        // up from 0 toward %zshop_level_progress_required%).
+        // Formula: totalItems - itemsRequiredForCurrentLevel (clamped to 0).
+        // Example: progression has '2:5000', the player has totalItems=30 at
+        //          level 1 (level 1 threshold = 0) -> remaining = 30 - 0 = 30.
+        //          At level 2 (threshold = 5000) with totalItems=7500
+        //          -> remaining = 7500 - 5000 = 2500.
         registerExact("level_progress_remaining", (ctx, arg) -> {
-            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return DEFAULT_NUMERIC;
             PlayerLevel pl = ctx.playerLevel();
-            Optional<Long> next = ctx.manager().getConfig().getItemsForNextLevel(pl.getLevel());
-            if (next.isEmpty()) return DEFAULT_NUMERIC;
-            return String.valueOf(Math.max(0L, next.get() - pl.getTotalItems()));
+            long currentLevelThreshold = ctx.manager().getConfig().getItemsForLevel(pl.getLevel());
+            long progressInLevel = pl.getTotalItems() - currentLevelThreshold;
+            return String.valueOf(Math.max(0L, progressInLevel));
         });
 
         // %zshop_level_progress_percent%
         registerExact("level_progress_percent", (ctx, arg) -> {
-            if (ctx.player() == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return DEFAULT_NUMERIC;
             return String.valueOf(ctx.manager().getProgressPercent(ctx.playerLevel()));
         });
 
         // %zshop_level_top_name_<rank>%
+        // Returns "-" when there is no player at the requested rank yet.
         registerPrefix("level_top_name_", (ctx, rank) -> {
             PlayerLevel top = parseTop(ctx.manager(), rank);
-            if (top == null) return "";
+            if (top == null) return EMPTY_TOP_PLACEHOLDER;
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(top.getUniqueId());
             String name = offlinePlayer.getName();
             return name != null ? name : top.getUniqueId().toString();
@@ -246,13 +387,13 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
         // %zshop_level_top_level_<rank>%
         registerPrefix("level_top_level_", (ctx, rank) -> {
             PlayerLevel top = parseTop(ctx.manager(), rank);
-            return top == null ? DEFAULT_NUMERIC : String.valueOf(top.getLevel());
+            return top == null ? EMPTY_TOP_PLACEHOLDER : String.valueOf(top.getLevel());
         });
 
         // %zshop_level_top_items_<rank>%
         registerPrefix("level_top_items_", (ctx, rank) -> {
             PlayerLevel top = parseTop(ctx.manager(), rank);
-            return top == null ? DEFAULT_NUMERIC : String.valueOf(top.getTotalItems());
+            return top == null ? EMPTY_TOP_PLACEHOLDER : String.valueOf(top.getTotalItems());
         });
     }
 
@@ -280,10 +421,10 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
      * {@link #player()} for nullity before using it because PAPI calls
      * placeholders for offline contexts as well.
      */
-    private record LevelContext(Player player, ZLevelManager manager) {
+    private record LevelContext(Player player, java.util.UUID uuid, ZLevelManager manager) {
 
         PlayerLevel playerLevel() {
-            return manager.getOrCreate(player.getUniqueId());
+            return manager.getOrCreate(uuid);
         }
     }
 

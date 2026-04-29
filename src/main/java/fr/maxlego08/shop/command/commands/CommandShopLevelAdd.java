@@ -12,25 +12,27 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-public class CommandShopLevelSet extends VCommand {
+/**
+ * {@code /shop level add <player> <amount>} – grants {@code amount} additional
+ * shop levels to the target. Negative or zero amounts are rejected. The
+ * resulting level is clamped to the {@code [minLevel, maxLevel]} range
+ * defined in {@code levels.yml}.
+ */
+public class CommandShopLevelAdd extends VCommand {
 
-    public CommandShopLevelSet(ShopPlugin plugin) {
+    public CommandShopLevelAdd(ShopPlugin plugin) {
         super(plugin);
-        this.setPermission(Permission.ZSHOP_LEVEL_SET);
-        this.addSubCommand("set");
-        this.setDescription(Message.DESCRIPTION_LEVEL_SET);
+        this.setPermission(Permission.ZSHOP_LEVEL_ADD);
+        this.addSubCommand("add");
+        this.setDescription(Message.DESCRIPTION_LEVEL_ADD);
         this.addRequireArg("player", (sender, args) -> Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName)
                 .collect(Collectors.toList()));
-        this.addRequireArg("level", (sender, args) -> {
-            LevelConfig config = plugin.getLevelManager().getConfig();
-            return IntStream.rangeClosed(config.getMinLevel(), config.getMaxLevel())
-                    .mapToObj(String::valueOf)
-                    .collect(Collectors.toList());
-        });
+        this.addRequireArg("amount", (sender, args) -> Arrays.asList("1", "2", "3", "5", "10"));
     }
 
     @Override
@@ -45,9 +47,9 @@ public class CommandShopLevelSet extends VCommand {
             return CommandType.SUCCESS;
         }
 
-        int level;
+        int amount;
         try {
-            level = this.argAsInteger(1);
+            amount = this.argAsInteger(1);
         } catch (NumberFormatException ex) {
             message(plugin, sender, Message.LEVEL_INVALID,
                     "%min%", String.valueOf(levelConfig.getMinLevel()),
@@ -55,17 +57,24 @@ public class CommandShopLevelSet extends VCommand {
             return CommandType.SUCCESS;
         }
 
-        if (level < levelConfig.getMinLevel() || level > levelConfig.getMaxLevel()) {
+        if (amount <= 0) {
             message(plugin, sender, Message.LEVEL_INVALID,
                     "%min%", String.valueOf(levelConfig.getMinLevel()),
                     "%max%", String.valueOf(levelConfig.getMaxLevel()));
             return CommandType.SUCCESS;
         }
 
-        PlayerLevel playerLevel = levelManager.setLevel(target.getUniqueId(), level);
-        message(plugin, sender, Message.LEVEL_SET_SUCCESS,
+        PlayerLevel playerLevel = levelManager.getOrCreate(target.getUniqueId());
+        int target_level = playerLevel.getLevel() + amount;
+        playerLevel = levelManager.setLevel(target.getUniqueId(), target_level);
+
+        message(plugin, sender, Message.LEVEL_ADD_SUCCESS,
                 "%player%", target.getName() != null ? target.getName() : name,
+                "%amount%", String.valueOf(amount),
                 "%level%", String.valueOf(playerLevel.getLevel()));
         return CommandType.SUCCESS;
     }
 }
+
+
+

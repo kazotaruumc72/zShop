@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "fr.maxlego08.shop"
-version = "3.3.4"
+version = "4.0.0-SNAPSHOT"
 
 extra.set("targetFolder", file("target/"))
 extra.set("apiFolder", file("target-api/"))

@@ -29,6 +29,8 @@ public class LevelConfig {
     private final Map<String, Integer> expByItem = new HashMap<>();
     private final List<ShopLevel> levels = new ArrayList<>();
     private final Map<Integer, Long> progression = new HashMap<>();
+    private boolean countBuy = true;
+    private boolean countSell = true;
 
     public LevelConfig(ShopPlugin plugin) {
         this.plugin = plugin;
@@ -46,6 +48,20 @@ public class LevelConfig {
         loadExp();
         loadLevels();
         loadProgression();
+    }
+
+    /**
+     * @return whether buy actions contribute to level progression (default true).
+     */
+    public boolean isCountBuy() {
+        return this.countBuy;
+    }
+
+    /**
+     * @return whether sell actions contribute to level progression (default true).
+     */
+    public boolean isCountSell() {
+        return this.countSell;
     }
 
     private void saveDefaultResource(String name) {
@@ -76,6 +92,10 @@ public class LevelConfig {
         this.levels.clear();
         File file = new File(this.plugin.getDataFolder(), "levels.yml");
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(file);
+        // Top-level toggles for what counts toward leveling up.
+        // Defaults to true to preserve backwards compatibility.
+        this.countBuy = configuration.getBoolean("count-buy", true);
+        this.countSell = configuration.getBoolean("count-sell", true);
         List<?> rawLevels = configuration.getList("levels", new ArrayList<>());
         for (Object raw : rawLevels) {
             parseEntry(raw, "levels.yml", (key, value) -> {

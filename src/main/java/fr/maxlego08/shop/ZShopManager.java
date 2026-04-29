@@ -464,7 +464,7 @@ public class ZShopManager extends ZUtils implements ShopManager {
             InventoryUtils.removeItem(inventory, itemStack, actualSellAmount);
 
             /* LEVEL PROGRESSION */
-            this.plugin.getLevelManager().addExp(player, material, actualSellAmount);
+            this.plugin.getLevelManager().addExp(player, material, actualSellAmount, HistoryType.SELL);
         });
 
         if (prices.isEmpty()) {

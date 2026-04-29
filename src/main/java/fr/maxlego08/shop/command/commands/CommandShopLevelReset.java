@@ -6,7 +6,11 @@ import fr.maxlego08.shop.level.ZLevelManager;
 import fr.maxlego08.shop.zcore.enums.Message;
 import fr.maxlego08.shop.zcore.enums.Permission;
 import fr.maxlego08.shop.zcore.utils.commands.CommandType;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+
+import java.util.stream.Collectors;
 
 public class CommandShopLevelReset extends VCommand {
 
@@ -15,7 +19,9 @@ public class CommandShopLevelReset extends VCommand {
         this.setPermission(Permission.ZSHOP_LEVEL_RESET);
         this.addSubCommand("reset");
         this.setDescription(Message.DESCRIPTION_LEVEL_RESET);
-        this.addRequireArg("player");
+        this.addRequireArg("player", (sender, args) -> Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName)
+                .collect(Collectors.toList()));
     }
 
     @Override

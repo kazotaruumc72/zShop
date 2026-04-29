@@ -16,6 +16,8 @@ public enum Permission {
     ZSHOP_LEVEL,
     ZSHOP_LEVEL_GET,
     ZSHOP_LEVEL_SET,
+    ZSHOP_LEVEL_ADD,
+    ZSHOP_LEVEL_REMOVE,
     ZSHOP_LEVEL_RESET
 
 	;

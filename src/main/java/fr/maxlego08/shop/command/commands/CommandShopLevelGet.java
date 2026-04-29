@@ -7,7 +7,11 @@ import fr.maxlego08.shop.level.ZLevelManager;
 import fr.maxlego08.shop.zcore.enums.Message;
 import fr.maxlego08.shop.zcore.enums.Permission;
 import fr.maxlego08.shop.zcore.utils.commands.CommandType;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+
+import java.util.stream.Collectors;
 
 public class CommandShopLevelGet extends VCommand {
 
@@ -16,7 +20,9 @@ public class CommandShopLevelGet extends VCommand {
         this.setPermission(Permission.ZSHOP_LEVEL_GET);
         this.addSubCommand("get");
         this.setDescription(Message.DESCRIPTION_LEVEL_GET);
-        this.addOptionalArg("player");
+        this.addOptionalArg("player", (sender, args) -> Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName)
+                .collect(Collectors.toList()));
     }
 
     @Override

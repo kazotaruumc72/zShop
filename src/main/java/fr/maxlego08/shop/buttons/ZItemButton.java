@@ -303,7 +303,7 @@ public class ZItemButton extends ItemButton {
         commands(amount, itemName, buyPrice, HistoryType.BUY, player);
         log(amount, itemName, buyPrice, player.getName(), player.getUniqueId(), HistoryType.BUY);
 
-        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), amount);
+        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), amount, HistoryType.BUY);
     }
 
     @Override
@@ -414,7 +414,7 @@ public class ZItemButton extends ItemButton {
         commands(realAmount, itemName, sellPrice, HistoryType.SELL, player);
         log(realAmount, itemName, sellPrice, player.getName(), player.getUniqueId(), HistoryType.SELL);
 
-        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), realAmount);
+        this.plugin.getLevelManager().addExp(player, this.getItemStack().getMaterial(), realAmount, HistoryType.SELL);
     }
 
     private void commands(int amount, String itemName, String price, HistoryType type, Player player) {

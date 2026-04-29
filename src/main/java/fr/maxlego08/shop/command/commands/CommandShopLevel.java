@@ -15,6 +15,8 @@ public class CommandShopLevel extends VCommand {
         this.setDescription(Message.DESCRIPTION_LEVEL);
         this.addSubCommand(new CommandShopLevelGet(plugin));
         this.addSubCommand(new CommandShopLevelSet(plugin));
+        this.addSubCommand(new CommandShopLevelAdd(plugin));
+        this.addSubCommand(new CommandShopLevelRemove(plugin));
         this.addSubCommand(new CommandShopLevelReset(plugin));
     }
 

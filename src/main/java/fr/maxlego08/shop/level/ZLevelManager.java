@@ -2,7 +2,9 @@ package fr.maxlego08.shop.level;
 
 import com.google.gson.reflect.TypeToken;
 import fr.maxlego08.shop.ShopPlugin;
+import fr.maxlego08.shop.api.history.HistoryType;
 import fr.maxlego08.shop.zcore.enums.Message;
+import fr.maxlego08.shop.zcore.logger.Logger;
 import fr.maxlego08.shop.zcore.utils.ZUtils;
 import fr.maxlego08.shop.zcore.utils.storage.Persist;
 import fr.maxlego08.shop.zcore.utils.storage.Saveable;
@@ -89,11 +91,23 @@ public class ZLevelManager extends ZUtils implements Saveable {
      * @param player        the player concerned
      * @param materialOrId  the material name (or custom item id) traded
      * @param amount        the amount of items traded
+     * @param type          {@link HistoryType#BUY} or {@link HistoryType#SELL}, used
+     *                      to honour the {@code count-buy} / {@code count-sell}
+     *                      toggles in {@code levels.yml}
      * @return the updated {@link PlayerLevel}
      */
-    public PlayerLevel addExp(Player player, String materialOrId, int amount) {
+    public PlayerLevel addExp(Player player, String materialOrId, int amount, HistoryType type) {
         if (player == null || amount <= 0) return null;
         PlayerLevel playerLevel = getOrCreate(player.getUniqueId());
+
+        // Honour the levels.yml toggles. When a category is disabled we still
+        // return the PlayerLevel (callers may rely on it) but skip incrementing
+        // counters and recomputing the level.
+        if (type == HistoryType.BUY && !this.levelConfig.isCountBuy()) return playerLevel;
+        if (type == HistoryType.SELL && !this.levelConfig.isCountSell()) return playerLevel;
+
+        long previousTotalItems = playerLevel.getTotalItems();
+        int previousLevel = playerLevel.getLevel();
 
         int expPerItem = this.levelConfig.getExp(materialOrId);
         // Every traded item counts toward progression (level requirements are
@@ -105,9 +119,15 @@ public class ZLevelManager extends ZUtils implements Saveable {
             playerLevel.addExp((long) expPerItem * amount);
         }
 
-        int previousLevel = playerLevel.getLevel();
         int newLevel = this.levelConfig.computeLevel(playerLevel.getTotalItems());
         if (newLevel > previousLevel) {
+            long thresholdReached = this.levelConfig.getItemsForLevel(newLevel);
+            Logger.info("Level-up: " + player.getName() + " went from level " + previousLevel
+                    + " to " + newLevel + " (totalItems " + previousTotalItems + " -> "
+                    + playerLevel.getTotalItems() + ", +" + amount + " from "
+                    + (type == null ? "?" : type.name()) + " of " + materialOrId
+                    + ", threshold for level " + newLevel + " = " + thresholdReached + ").",
+                    Logger.LogType.SUCCESS);
             playerLevel.setLevel(newLevel);
             double bonus = this.levelConfig.getBonusPercent(newLevel);
             this.message(this.plugin, player, Message.LEVEL_UP,
@@ -117,6 +137,19 @@ public class ZLevelManager extends ZUtils implements Saveable {
             playerLevel.setLevel(newLevel);
         }
         return playerLevel;
+    }
+
+    /**
+     * Backwards-compatible overload preserved for existing API consumers; the
+     * type is unknown and therefore neither {@code count-buy} nor
+     * {@code count-sell} toggles can short-circuit the call.
+     *
+     * @deprecated prefer {@link #addExp(Player, String, int, HistoryType)} so
+     *             {@code levels.yml} can filter based on the action type.
+     */
+    @Deprecated
+    public PlayerLevel addExp(Player player, String materialOrId, int amount) {
+        return addExp(player, materialOrId, amount, null);
     }
 
     /**
