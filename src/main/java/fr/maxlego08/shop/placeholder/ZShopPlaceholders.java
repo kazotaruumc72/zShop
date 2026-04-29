@@ -36,9 +36,9 @@ import java.util.stream.Collectors;
  * </ul>
  * <p>
  * Resolution is driven by two registries: {@link #exactResolvers} for fixed
- * placeholder names and {@link #prefixResolvers} for placeholders that take an
- * argument suffix (the leaderboard ones). Adding or removing a placeholder is
- * a single line in {@link #registerDefaults()}.
+ * placeholder names and {@link #prefixResolvers} for placeholders that carry a
+ * dynamic suffix (e.g. the leaderboard rank). Adding or removing a placeholder
+ * is a single line in {@link #registerDefaults()}.
  * <p>
  * The class also exposes a static {@link #setPlaceholders(Player, String)} /
  * {@link #setPlaceholders(Player, List)} facade that delegates to PlaceholderAPI

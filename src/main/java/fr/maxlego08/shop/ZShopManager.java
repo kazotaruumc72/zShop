@@ -155,8 +155,9 @@ public class ZShopManager extends ZUtils implements ShopManager {
     @Override
     public void registerPlaceholders() {
         // No-op: zShop's PlaceholderAPI integration is now self-contained in
-        // ZShopPlaceholders, which is registered during ShopPlugin#onEnable.
-        // This method is kept to honour the public ShopManager API contract.
+        // ZShopPlaceholders, registered via ZShopPlaceholders.initialize(...)
+        // during ShopPlugin#onEnable. This method is kept to honour the
+        // public ShopManager API contract.
     }
 
     @Override
