@@ -2,6 +2,9 @@ package fr.maxlego08.shop.placeholder;
 
 import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.level.PlayerLevel;
+import fr.maxlego08.shop.level.PlayerShopLevel2;
+import fr.maxlego08.shop.level.ShopLevel2Config;
+import fr.maxlego08.shop.level.ShopLevel2Manager;
 import fr.maxlego08.shop.level.ZLevelManager;
 import fr.maxlego08.shop.zcore.logger.Logger;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -34,6 +37,15 @@ import java.util.stream.Collectors;
  *   <li>{@code %zshop_level_top_name_<rank>%} – player name at leaderboard rank</li>
  *   <li>{@code %zshop_level_top_level_<rank>%} – level at leaderboard rank</li>
  *   <li>{@code %zshop_level_top_items_<rank>%} – total items at leaderboard rank</li>
+ *   <li>{@code %zshop_level2%} – current rarity level</li>
+ *   <li>{@code %zshop_level2_max%} – maximum rarity level configured in {@code shop_levels.yml}</li>
+ *   <li>{@code %zshop_level2_exp%} – cumulated rarity experience</li>
+ *   <li>{@code %zshop_level2_progress_required%} – exp required to reach the next rarity level</li>
+ *   <li>{@code %zshop_level2_progress_remaining%} – exp accumulated within the current rarity bracket</li>
+ *   <li>{@code %zshop_level2_progress_percent%} – progression toward the next rarity level (0–100)</li>
+ *   <li>{@code %zshop_level2_top_name_<rank>%} – player name at the rarity leaderboard rank</li>
+ *   <li>{@code %zshop_level2_top_level_<rank>%} – rarity level at leaderboard rank</li>
+ *   <li>{@code %zshop_level2_top_exp_<rank>%} – total rarity exp at leaderboard rank</li>
  * </ul>
  * <p>
  * Resolution is driven by two registries: {@link #exactResolvers} for fixed
@@ -395,6 +407,106 @@ public class ZShopPlaceholders extends PlaceholderExpansion {
             PlayerLevel top = parseTop(ctx.manager(), rank);
             return top == null ? EMPTY_TOP_PLACEHOLDER : String.valueOf(top.getTotalItems());
         });
+
+        // ----- Second (rarity) level system -----
+        // Prefix resolvers must come before any future "level2_" exact-key
+        // collision; the registry walks prefixes first, but we still register
+        // the more specific keys first to mirror the level1 ordering.
+
+        // %zshop_level2_top_name_<rank>%
+        registerPrefix("level2_top_name_", (ctx, rank) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null) return EMPTY_TOP_PLACEHOLDER;
+            PlayerShopLevel2 top = parseTop2(m, rank);
+            if (top == null) return EMPTY_TOP_PLACEHOLDER;
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(top.getUniqueId());
+            String name = offlinePlayer.getName();
+            return name != null ? name : top.getUniqueId().toString();
+        });
+
+        // %zshop_level2_top_level_<rank>%
+        registerPrefix("level2_top_level_", (ctx, rank) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null) return EMPTY_TOP_PLACEHOLDER;
+            PlayerShopLevel2 top = parseTop2(m, rank);
+            return top == null ? EMPTY_TOP_PLACEHOLDER : String.valueOf(top.getLevel());
+        });
+
+        // %zshop_level2_top_exp_<rank>%
+        registerPrefix("level2_top_exp_", (ctx, rank) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null) return EMPTY_TOP_PLACEHOLDER;
+            PlayerShopLevel2 top = parseTop2(m, rank);
+            return top == null ? EMPTY_TOP_PLACEHOLDER : String.valueOf(top.getTotalExp());
+        });
+
+        // %zshop_level2%
+        registerExact("level2", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null) return DEFAULT_NUMERIC;
+            if (ctx.uuid() == null) return String.valueOf(m.getConfig().getMinLevel());
+            return String.valueOf(m.getOrCreate(ctx.uuid()).getLevel());
+        });
+
+        // %zshop_level2_max%
+        registerExact("level2_max", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null) return DEFAULT_NUMERIC;
+            return String.valueOf(m.getConfig().getMaxLevel());
+        });
+
+        // %zshop_level2_exp%
+        registerExact("level2_exp", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null || ctx.uuid() == null) return DEFAULT_NUMERIC;
+            return String.valueOf(m.getOrCreate(ctx.uuid()).getTotalExp());
+        });
+
+        // %zshop_level2_progress_required%
+        // Cumulated exp required to reach the *next* rarity level. Falls back
+        // to the player's current totalExp when they are at the maximum level
+        // so the value can still be rendered as a denominator.
+        registerExact("level2_progress_required", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null || ctx.uuid() == null) return DEFAULT_NUMERIC;
+            PlayerShopLevel2 pl = m.getOrCreate(ctx.uuid());
+            return String.valueOf(m.getConfig().getExpForNextLevel(pl.getLevel())
+                    .orElse(pl.getTotalExp()));
+        });
+
+        // %zshop_level2_progress_remaining%
+        // Exp already accumulated within the current level bracket
+        // (totalExp - threshold of current level, clamped to 0). Mirrors the
+        // level1 placeholder's semantics for consistency.
+        registerExact("level2_progress_remaining", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null || ctx.uuid() == null) return DEFAULT_NUMERIC;
+            PlayerShopLevel2 pl = m.getOrCreate(ctx.uuid());
+            ShopLevel2Config cfg = m.getConfig();
+            long currentLevelThreshold = cfg.getExpForLevel(pl.getLevel());
+            long progressInLevel = pl.getTotalExp() - currentLevelThreshold;
+            return String.valueOf(Math.max(0L, progressInLevel));
+        });
+
+        // %zshop_level2_progress_percent%
+        registerExact("level2_progress_percent", (ctx, arg) -> {
+            ShopLevel2Manager m = level2Manager();
+            if (m == null || ctx.uuid() == null) return DEFAULT_NUMERIC;
+            return String.valueOf(m.getProgressPercent(m.getOrCreate(ctx.uuid())));
+        });
+    }
+
+    private ShopLevel2Manager level2Manager() {
+        return this.plugin.getLevel2Manager();
+    }
+
+    private static PlayerShopLevel2 parseTop2(ShopLevel2Manager manager, String rank) {
+        if (rank == null || rank.isEmpty()) return null;
+        try {
+            return manager.getTop(Integer.parseInt(rank.trim()));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private void registerExact(String name, PlaceholderResolver resolver) {

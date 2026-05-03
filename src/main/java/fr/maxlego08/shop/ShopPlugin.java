@@ -21,7 +21,10 @@ import fr.maxlego08.shop.command.commands.CommandSellInventory;
 import fr.maxlego08.shop.command.commands.CommandShop;
 import fr.maxlego08.shop.economy.ZEconomyManager;
 import fr.maxlego08.shop.history.ZHistoryManager;
+import fr.maxlego08.shop.level.LevelBossBarManager;
 import fr.maxlego08.shop.level.LevelConfig;
+import fr.maxlego08.shop.level.ShopLevel2Config;
+import fr.maxlego08.shop.level.ShopLevel2Manager;
 import fr.maxlego08.shop.level.ZLevelManager;
 import fr.maxlego08.shop.limit.ZLimitManager;
 import fr.maxlego08.shop.listener.MenuListener;
@@ -59,6 +62,8 @@ public class ShopPlugin extends ZPlugin {
     private final TranslationManager translationManager = new ZTranslationManager(this);
     private final LevelConfig levelConfig = new LevelConfig(this);
     private final ZLevelManager levelManager = new ZLevelManager(this, levelConfig);
+    private final ShopLevel2Config level2Config = new ShopLevel2Config(this);
+    private final ShopLevel2Manager level2Manager = new ShopLevel2Manager(this, level2Config);
     private LevelBossBarManager bossBarManager;
     public int minimumVersion = 1100;
     private HistoryManager historyManager;
@@ -135,6 +140,9 @@ public class ShopPlugin extends ZPlugin {
         this.levelConfig.load();
         this.levelManager.load(this.getPersist());
         this.addSave(this.levelManager);
+        this.level2Config.load();
+        this.level2Manager.load(this.getPersist());
+        this.addSave(this.level2Manager);
         this.bossBarManager = new LevelBossBarManager(this);
         this.bossBarManager.load();
         this.levelManager.setBossBarManager(this.bossBarManager);
@@ -190,6 +198,7 @@ public class ShopPlugin extends ZPlugin {
         super.reloadFiles();
         this.reloadConfig();
         this.levelConfig.load();
+        this.level2Config.load();
         if (this.bossBarManager != null) this.bossBarManager.load();
         this.economyManager.loadEconomies();
         this.shopManager.loadConfig();
@@ -257,5 +266,13 @@ public class ShopPlugin extends ZPlugin {
 
     public LevelConfig getLevelConfig() {
         return levelConfig;
+    }
+
+    public ShopLevel2Manager getLevel2Manager() {
+        return level2Manager;
+    }
+
+    public ShopLevel2Config getLevel2Config() {
+        return level2Config;
     }
 }

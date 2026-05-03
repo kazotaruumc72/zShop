@@ -1,0 +1,32 @@
+####################################################
+#
+#  ███████╗░██████╗██╗░░██╗░█████╗░██████╗░
+#  ╚════██║██╔════╝██║░░██║██╔══██╗██╔══██╗
+#  ░░███╔═╝╚█████╗░███████║██║░░██║██████╔╝
+#  ██╔══╝░░░╚═══██╗██╔══██║██║░░██║██╔═══╝░
+#  ███████╗██████╔╝██║░░██║╚█████╔╝██║░░░░░
+#  ╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░
+#
+# Second-level (rarity) progression.
+# Format:
+#   - '<level>:<requiredExp>'
+#
+# <level>        the rarity level the player will reach
+# <requiredExp>  the cumulated experience needed to unlock that level
+#
+# Players start at level 0 (no rarity unlocked) and advance through every
+# threshold listed below as they gain experience via /shop level2 expadd
+# (or any command that grants level2 exp). Up to five levels are supported.
+#
+# NOTE: Each entry is quoted because YAML 1.1 (used by Bukkit/SnakeYAML)
+# would otherwise parse "1:25000" as a sexagesimal number. Always keep the
+# quotes when adding or editing levels.
+#
+####################################################
+
+levels:
+  - '1:25000'
+  - '2:100000'
+  - '3:250000'
+  - '4:500000'
+  - '5:1000000'

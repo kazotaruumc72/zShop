@@ -82,7 +82,26 @@ public enum Message {
     LEVEL_REMOVE_SUCCESS("§a§e-%amount% §ashop level(s) removed from §f%player%§a (now level §e%level%§a)."),
     LEVEL_RESET_SUCCESS("§aShop level of §f%player%§a has been reset."),
     LEVEL_INVALID("§cInvalid level. Allowed range§7: §f%min% §7- §f%max%§c."),
-    LEVEL_PLAYER_NOT_FOUND("§cUnable to find the player §f%player%§c.")
+    LEVEL_PLAYER_NOT_FOUND("§cUnable to find the player §f%player%§c."),
+    DESCRIPTION_LEVEL2("Manage shop rarity levels"),
+    DESCRIPTION_LEVEL2_GET("Display the rarity level of a player"),
+    DESCRIPTION_LEVEL2_SET("Set the rarity level of a player"),
+    DESCRIPTION_LEVEL2_ADD("Add rarity levels to a player"),
+    DESCRIPTION_LEVEL2_REMOVE("Remove rarity levels from a player"),
+    DESCRIPTION_LEVEL2_RESET("Reset the rarity level of a player"),
+    DESCRIPTION_LEVEL2_EXP_ADD("Add rarity experience to a player"),
+    DESCRIPTION_LEVEL2_EXP_REMOVE("Remove rarity experience from a player"),
+    LEVEL2_UP("§aYou have just unlocked rarity level §e%level%§a §7(§e%max% §7max§7)§a!"),
+    LEVEL2_GET_SELF("§eYour rarity level§7: §a%level%§7/§a%max%§7. §eExp§7: §a%exp%§7/§a%next%§7 §8(§a%percent%%§8)§7."),
+    LEVEL2_GET_OTHER("§eRarity level of §f%player%§7: §a%level%§7/§a%max%§7. §eExp§7: §a%exp%§7/§a%next%§7 §8(§a%percent%%§8)§7."),
+    LEVEL2_SET_SUCCESS("§aRarity level of §f%player%§a set to §e%level%§a."),
+    LEVEL2_ADD_SUCCESS("§a§e+%amount% §ararity level(s) given to §f%player%§a (now level §e%level%§a)."),
+    LEVEL2_REMOVE_SUCCESS("§a§e-%amount% §ararity level(s) removed from §f%player%§a (now level §e%level%§a)."),
+    LEVEL2_RESET_SUCCESS("§aRarity level of §f%player%§a has been reset."),
+    LEVEL2_EXP_ADD_SUCCESS("§a§e+%amount% §ararity exp given to §f%player%§a (total §e%total%§a, level §e%level%§a)."),
+    LEVEL2_EXP_REMOVE_SUCCESS("§a§e-%amount% §ararity exp removed from §f%player%§a (total §e%total%§a, level §e%level%§a)."),
+    LEVEL2_INVALID("§cInvalid value. Allowed range§7: §f%min% §7- §f%max%§c."),
+    LEVEL2_PLAYER_NOT_FOUND("§cUnable to find the player §f%player%§c.")
 
     ;
 
