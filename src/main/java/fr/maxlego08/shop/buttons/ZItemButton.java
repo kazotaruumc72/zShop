@@ -44,8 +44,8 @@ public class ZItemButton extends ItemButton {
 
     protected final ShopManager shopManager;
     protected final ShopPlugin plugin;
-    private final double sellPrice;
-    private final double buyPrice;
+    private final PriceExpression sellPrice;
+    private final PriceExpression buyPrice;
     private final int maxStack;
     private final List<String> lore;
     private final ShopEconomy shopEconomy;
@@ -65,7 +65,7 @@ public class ZItemButton extends ItemButton {
     private final String withdrawReason;
     private final String depositReason;
 
-    public ZItemButton(ShopPlugin plugin, double sellPrice, double buyPrice, int maxStack, List<String> lore, ShopEconomy shopEconomy, List<String> buyCommands, List<String> sellCommands, boolean giveItem, Limit serverSellLimit, Limit serverBuyLimit, Limit playerSellLimit, Limit playerBuyLimit, boolean enableLog, boolean affectByPriceModifier, String mob, String inventoryBuy, String inventorySell, boolean unstackable, String withdrawReason, String depositReason) {
+    public ZItemButton(ShopPlugin plugin, PriceExpression sellPrice, PriceExpression buyPrice, int maxStack, List<String> lore, ShopEconomy shopEconomy, List<String> buyCommands, List<String> sellCommands, boolean giveItem, Limit serverSellLimit, Limit serverBuyLimit, Limit playerSellLimit, Limit playerBuyLimit, boolean enableLog, boolean affectByPriceModifier, String mob, String inventoryBuy, String inventorySell, boolean unstackable, String withdrawReason, String depositReason) {
         this.plugin = plugin;
         this.shopManager = plugin.getShopManager();
         this.sellPrice = sellPrice;
@@ -92,12 +92,12 @@ public class ZItemButton extends ItemButton {
 
     @Override
     public double getSellPrice() {
-        return this.sellPrice;
+        return this.sellPrice.evaluate(null);
     }
 
     @Override
     public double getBuyPrice() {
-        return this.buyPrice;
+        return this.buyPrice.evaluate(null);
     }
 
     @Override
@@ -112,22 +112,22 @@ public class ZItemButton extends ItemButton {
 
     @Override
     public double getSellPrice(Player player, int amount) {
-        AtomicReference<Double> price = new AtomicReference<>(getSellPrice(amount));
+        double stackAmount = Double.parseDouble(this.getItemStack().getAmount());
+        AtomicReference<Double> price = new AtomicReference<>(amount * this.sellPrice.evaluate(player) / stackAmount);
         if (this.affectByPriceModifier()) {
             Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.SELL);
             optional.ifPresent(modifier -> price.updateAndGet(v -> v * modifier.getModifier()));
-            price.updateAndGet(v -> this.plugin.getLevelManager().applySellBonus(player, v));
         }
         return price.get();
     }
 
     @Override
     public double getBuyPrice(Player player, int amount) {
-        AtomicReference<Double> price = new AtomicReference<>(getBuyPrice(amount));
+        double stackAmount = Double.parseDouble(this.getItemStack().getAmount());
+        AtomicReference<Double> price = new AtomicReference<>(amount * this.buyPrice.evaluate(player) / stackAmount);
         if (this.affectByPriceModifier()) {
             Optional<PriceModifier> optional = this.shopManager.getPriceModifier(player, PriceType.BUY);
             optional.ifPresent(modifier -> price.updateAndGet(v -> v * modifier.getModifier()));
-            price.updateAndGet(v -> this.plugin.getLevelManager().applyBuyBonus(player, v));
         }
         return price.get();
     }
@@ -144,12 +144,12 @@ public class ZItemButton extends ItemButton {
 
     @Override
     public boolean canSell() {
-        return this.sellPrice > 0;
+        return this.sellPrice.isPositive();
     }
 
     @Override
     public boolean canBuy() {
-        return this.buyPrice > 0;
+        return this.buyPrice.isPositive();
     }
 
     @Override

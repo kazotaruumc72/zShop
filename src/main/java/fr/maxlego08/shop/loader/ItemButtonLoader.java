@@ -7,6 +7,7 @@ import fr.maxlego08.shop.ShopPlugin;
 import fr.maxlego08.shop.api.economy.ShopEconomy;
 import fr.maxlego08.shop.api.limit.Limit;
 import fr.maxlego08.shop.api.limit.LimitType;
+import fr.maxlego08.shop.buttons.PriceExpression;
 import fr.maxlego08.shop.buttons.ZItemButton;
 import fr.maxlego08.shop.exceptions.EconomyNotFoundException;
 import fr.maxlego08.shop.save.Config;
@@ -30,8 +31,8 @@ public class ItemButtonLoader extends ButtonLoader {
 
         String defaultEconomy = configuration.getString("economy", Config.defaultEconomy);
 
-        double sellPrice = configuration.getDouble(path + "sellPrice", 0.0);
-        double buyPrice = configuration.getDouble(path + "buyPrice", 0.0);
+        PriceExpression sellPrice = new PriceExpression(configuration.get(path + "sellPrice", 0.0));
+        PriceExpression buyPrice = new PriceExpression(configuration.get(path + "buyPrice", 0.0));
 
         int maxStack = configuration.getInt(path + "maxStack", 64);
         List<String> lore = configuration.getStringList(path + "lore");

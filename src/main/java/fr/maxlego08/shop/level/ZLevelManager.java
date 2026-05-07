@@ -64,34 +64,6 @@ public class ZLevelManager extends ZUtils implements Saveable {
     }
 
     /**
-     * Get the bonus percentage that applies to the given player's prices, or 0
-     * if no level applies.
-     */
-    public double getBonusPercent(Player player) {
-        if (player == null) return 0;
-        PlayerLevel playerLevel = getOrCreate(player.getUniqueId());
-        return this.levelConfig.getBonusPercent(playerLevel.getLevel());
-    }
-
-    /**
-     * Apply the level bonus to a buy price (a discount).
-     */
-    public double applyBuyBonus(Player player, double price) {
-        double bonus = getBonusPercent(player);
-        if (bonus <= 0) return price;
-        return price * (1.0 - bonus / 100.0);
-    }
-
-    /**
-     * Apply the level bonus to a sell price (a gain).
-     */
-    public double applySellBonus(Player player, double price) {
-        double bonus = getBonusPercent(player);
-        if (bonus <= 0) return price;
-        return price * (1.0 + bonus / 100.0);
-    }
-
-    /**
      * Add experience to the player after a buy/sell transaction. If the player
      * reaches a new level, they are notified via the {@link Message#LEVEL_UP}
      * message.
